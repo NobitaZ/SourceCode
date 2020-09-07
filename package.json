@@ -1,0 +1,16 @@
+{
+  "name": "society6",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "start": "electron .",
+    "package-win": "electron-packager . --overwrite --platform=win32 --asar=true --arch=ia32 --prune=true --out=release-builds --version-string.CompanyName=CE --version-string.FileDescription=QuyDoan --version-string.ProductName=\"Society6 Project\""
+  },
+  "author": "Quy Doan",
+  "license": "ISC",
+  "dependencies": {
+    "electron": "^10.1.1",
+    "puppeteer": "^5.2.1"
+  }
+}
