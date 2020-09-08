@@ -2,15 +2,19 @@
   "name": "society6",
   "version": "1.0.0",
   "description": "",
-  "main": "app.js",
+  "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "package-win": "electron-packager . --overwrite --platform=win32 --asar=true --arch=ia32 --prune=true --out=release-builds --version-string.CompanyName=CE --version-string.FileDescription=QuyDoan --version-string.ProductName=\"Society6 Project\""
+    "dev": "nodemon --exec electron .",
+    "package-win": "electron-packager . --overwrite --platform=win32 --asar --arch=ia32 --prune=true --out=release-builds --version-string.CompanyName=CE --version-string.FileDescription=QuyDoan --version-string.ProductName=\"Society6 Project\""
   },
   "author": "Quy Doan",
   "license": "ISC",
   "dependencies": {
     "electron": "^10.1.1",
+    "electron-packager": "^15.1.0",
+    "mongoose": "^5.10.3",
+    "nodemon": "^2.0.4",
     "puppeteer": "^5.2.1"
   }
 }
