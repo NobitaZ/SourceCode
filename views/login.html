@@ -4,12 +4,13 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bootstrap Elegant Modal Login Modal Form with Icons</title>
+<title>Society6</title>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 <link href="https://fonts.googleapis.com/css?family=Roboto|Varela+Round" rel="stylesheet">
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 <style>
     body {
 		font-family: 'Varela Round', sans-serif;
@@ -95,8 +96,9 @@
 			<div class="modal-header">				
 				<h4 class="modal-title">Login</h4>
 			</div>
+			<div id="msg-cus"></div>
 			<div class="modal-body">
-				<form action="/examples/actions/confirmation.php" method="post">
+				<form>
 					<div class="form-group">
 						<i class="fa fa-user"></i>
 						<input type="text" class="form-control" id="username" name="username" placeholder="Username" required="required">
@@ -113,6 +115,42 @@
 			</div>
 		</div>
 	</div>
-</div>     
+</div>
+<script>
+const electron = require('electron');
+	//window.jQuery = window.$ = require('jquery');
+const {ipcRenderer} = electron;
+const username = document.querySelector('#username');
+const password = document.querySelector('#password');
+document.querySelector('form').addEventListener('submit', submitForm);
+function submitForm(e){
+    e.preventDefault();
+    const items = {
+        username: username.value,
+        password: password.value
+    };
+
+    console.log(ipcRenderer);
+    ipcRenderer.send('auth-form', items);
+}
+const msgDiv = document.querySelector('#msg-cus');
+ipcRenderer.on('msg-login', function(e, item){
+	if (item == 'user-failed') {
+		msgDiv.className = '';
+		username.value = '';
+		password.value = '';
+		msgDiv.className += 'alert alert-danger alert-dismissible show';
+		const itemText = document.createTextNode(item);
+		msgDiv.innerHTML = 'Incorrect Username';
+	} else if (item == 'pass-failed') {
+		msgDiv.className = '';
+		username.value = '';
+		password.value = '';
+		msgDiv.className += 'alert alert-danger alert-dismissible show';
+		const itemText = document.createTextNode(item);
+		msgDiv.innerHTML = 'Incorrect Password';
+	} 
+});
+</script>
 </body>
 </html>
