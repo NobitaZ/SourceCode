@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 
 const LogsSchema = new mongoose.Schema({
+    user: {
+        type: String,
+        required: true
+    },
     ip_address: {
         type: String,
         required: true

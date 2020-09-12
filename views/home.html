@@ -8,8 +8,57 @@
     <title>Society6 Upload Tool</title>
 </head>
 <body>
+    <div id="divTest"></div>
     <nav class="navbar navbar-expand-md bg-dark navbar-dark">
         <label class="navbar-brand">Society6 Upload Tool</label>
     </nav>
+    <br>
+    <table id="userTable" class="table table-hover">
+        <thead>
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">Account</th>
+              <th scope="col">Password</th>
+              <th scope="col">Proxy</th>
+              <th scope="col">Proxy Username</th>
+              <th scope="col">Proxy Password</th>
+              <th scope="col">Function</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+              
+          </tbody>
+    </table>
+<script>
+    const parse = require('csv-parse')
+    const electron = require('electron');
+    const {ipcRenderer} = electron;
+    const path = require('path');
+    const fs = require('fs');
+    var tableRef = document.getElementById('userTable').getElementsByTagName('tbody')[0];
+
+    fs.readFile("./info.csv", function(err, data) {
+        if (err) {
+            throw err;
+        }
+        parse(data, {columns: false, trim: true}, function(err, rows) {
+            for (let index = 1; index < rows.length; index++) {
+                const elements = rows[index];
+                var str = "<th scope='row'>" + index.toString()+ "</th>";
+                elements.forEach(element => {
+                    str += "<td>" +element+ "</td>";
+                });
+                str += `<td><button class='btn btn-primary btn-xs my-xs-btn' type='button' onClick='uploadFunc()' >` +
+                    "<span class='glyphicon glyphicon-pencil'></span> Upload </button></td>"
+                tableRef.insertRow().innerHTML = str;
+            }
+        }) 
+    })
+
+    function uploadFunc() {
+        alert('clicked')
+        //ipcRenderer.send('upload-clicked', arrItems);
+    }
+</script>
 </body>
 </html>
