@@ -4,9 +4,10 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const User = require(path.join(__dirname, 'models/User'));
 const Logs = require(path.join(__dirname, 'models/Logs'));
-const {app, BrowserWindow, Menu, ipcMain} = require('electron');
+const {app, BrowserWindow, Menu, ipcMain, remote} = require('electron');
 const config = require(path.join(__dirname, './config/keys'));
 const fs = require('fs');
+const myFunc = require(path.join(__dirname, './src/windowRenderer'));
 //const $ = jQuery = require('jquery');
 var parse = require('csv-parse');
 
@@ -37,7 +38,8 @@ function createWindow () {
     height: 500,
     resizable: false,
     webPreferences: {
-      nodeIntegration: true
+      nodeIntegration: true,
+      enableRemoteModule: true
     }
   })
 
@@ -45,7 +47,7 @@ function createWindow () {
   mainWindow.on('closed', function () {
   mainWindow = null
   })
-  const mainMenu = Menu.buildFromTemplate(mainMenuTemplate);
+  const mainMenu = Menu.buildFromTemplate(myFunc.mainMenuTemplate(app));
   Menu.setApplicationMenu(mainMenu);
 };
 
@@ -58,7 +60,8 @@ function createHomeWindow(){
     darkTheme: true,
     title:'Society Upload Tool',
     webPreferences: {
-      nodeIntegration: true
+      nodeIntegration: true,
+      enableRemoteModule: true
     }
   });
   homeWindow.removeMenu();
@@ -66,7 +69,7 @@ function createHomeWindow(){
   homeWindow.on('close', function(){
     homeWindow = null;
   });
-  const mainMenu = Menu.buildFromTemplate(mainMenuTemplate);
+  const mainMenu = Menu.buildFromTemplate(myFunc.mainMenuTemplate(app));
   Menu.setApplicationMenu(mainMenu);
 }
 
@@ -85,14 +88,12 @@ app.on('activate', function () {
 
 //Auth user
 ipcMain.on('auth-form',function(e, item) {
-  console.log(item);
   username = item['username'];
   password = item['password'];
   User.findOne({
     username: username
   }).then(user => {
     if (!user) {
-      console.log('user incorrect')
       mainWindow.webContents.send('msg-login','user-failed');
       return;
     }
@@ -102,7 +103,7 @@ ipcMain.on('auth-form',function(e, item) {
       if (isMatch) {
         createHomeWindow();
         mainWindow.close();
-        mainProcess();
+        //mainProcess();
         // const publicIp = require('public-ip');
         // const ip_adds = (async () => {
         //     const ip =  await publicIp.v4();
@@ -115,7 +116,6 @@ ipcMain.on('auth-form',function(e, item) {
         // })();
         
       } else {
-        console.log('pass incorrect')
         mainWindow.webContents.send('msg-login','pass-failed');
         return;
       }
@@ -123,59 +123,106 @@ ipcMain.on('auth-form',function(e, item) {
   });
 });
 
-// Handle upload button clicked
-ipcMain.on('upload-clicked', function (e, arrItems) {
-  console.log(arrItems);
+var arrAcc = {}
+// Handle select button click
+ipcMain.on('select-clicked', function (e, arrItems) {
+  homeWindow.loadURL(path.join(__dirname, './views/upload.html'));
+  arrAcc = arrItems;
+//console.log(app.getAppPath())
+  console.log(arrAcc)
+})
+
+// Handle upload button click
+ipcMain.on('upload-clicked', function(e, arrItems) {
+  mainProcess(arrAcc,arrItems);
 })
 
 //Main process function
-function mainProcess(){
-  
-}
+async function mainProcess(arrAcc, arrItems){
+  const accUsername = arrAcc[0];
+  const accPassword = arrAcc[1];
+  const arrImgPath = arrItems[0];
+  const tagName = "BLEACH";//arrItems[1];
+  var tagListStr = 'Bleach Manga Anime Cartoon Kid Room Hero Epic Japan Japanese Otaku Movie Book Character';
+  const tagListArr = tagListStr.split(' ');
+  const {page} =  await openBrowser();
 
-//Timeout 
-function PromiseTimeout(delayms) {
-  return new Promise(function (resolve, reject) {
-      setTimeout(resolve, delayms);
-  });
-}
+  await page.setViewport({width: 1500, height: 768})
+  await page.setDefaultNavigationTimeout(0);
+  await page.goto(`https://society6.com/login`, {waitUntil: 'networkidle2'});
+  await myFunc.timeOutFunc(1000);
+  await page.type('#email',accUsername);
+  await page.type('#password',accPassword);
+  await Promise.all([
+    page.keyboard.press('Enter'),
+    page.waitForNavigation({ waitUntil: 'networkidle0' }),
+  ]).catch((error) => {console.log(error)});;
+  const cookies = await page.cookies;
+  await page.goto(`https://society6.com/artist-studio`);
+  await myFunc.timeOutFunc(5000);
+  await page.click('[qa-id="new_artwork_button"]');
+  await page.type('[qa-id="artworkTitle"]',tagName);
+  const [fileChooser] = await Promise.all([
+    page.waitForFileChooser(),
+    page.click('[qa-id="dropZone"]')
+  ]).catch((error) => {console.log(error)});
 
-// Create menu template
-const mainMenuTemplate =  [
-  // Each object is a dropdown
-  {
-    label: 'File',
-    submenu:[
-      {
-        label: 'Quit',
-        accelerator:process.platform == 'darwin' ? 'Command+Q' : 'Ctrl+Q',
-        click(){
-          app.quit();
-        }
+  await fileChooser.accept(arrImgPath);
+  //const btnContinue = document.querySelector(`[qa-id="continue"]`);
+  // var btnContinue = await page.evaluate(() => {
+  //   var result = true;
+  //   let arrClassname = document.querySelector(`[qa-id="continue"]`).className.split(' ');
+  //   arrClassname.forEach(ele => {
+  //     if (ele.includes('Disabled')) {
+  //       result = false;
+  //     }
+  //   });
+  //   return result;
+  // });
+  // var selectorBtn = '[qa-id="continue"]';
+  // console.log(btnContinue);
+  await page.waitForFunction(() => {
+    let arrClassname = document.querySelector(`[qa-id="continue"]`).className.split(' ');
+    var result = true;
+    arrClassname.forEach(ele => {
+      if (ele.includes('Disabled')) {
+        result = false;
       }
-    ]
-  }
-];
-// If OSX, add empty object to menu
-if(process.platform == 'darwin'){
-  mainMenuTemplate.unshift({});
+    });
+    return result;
+  }, {});
+  //await myFunc.timeOutFunc(50000);
+  console.log('btn enable')
+  await page.click('[qa-id="continue"]');
+  await myFunc.timeOutFunc(500);
+  await page.click('[qa-id="copyrightApproved"]');
+  await myFunc.timeOutFunc(500);
+  await page.click('[qa-id="matureContentFalse"]');
+  await myFunc.timeOutFunc(2000);
+  await Promise.all([
+    page.click('[qa-id="continue"]'),
+    page.waitForNavigation({ waitUntil: 'networkidle0' }),
+  ]).catch((error) => {console.log(error)});;
 }
 
-// Add developer tools option if in dev
-if(process.env.NODE_ENV !== 'production'){
-  mainMenuTemplate.push({
-    label: 'Developer Tools',
-    submenu:[
-      {
-        role: 'reload'
-      },
-      {
-        label: 'Toggle DevTools',
-        accelerator:process.platform == 'darwin' ? 'Command+I' : 'Ctrl+I',
-        click(item, focusedWindow){
-          focusedWindow.toggleDevTools();
-        }
-      }
-    ]
+// Open browser
+async function openBrowser() {
+  const browser = await puppeteer.launch({
+    executablePath:`${process.cwd()}\\chrome\\chrome.exe`, 
+    headless: false,
+    ignoreHTTPSErrors: true,
+    args: [`--window-size=1500,768`]
   });
+  console.log('Browser opened');
+  //await mainWindow.webContents.send('log','Browser openned');
+  const page = await browser.newPage();
+  let item = {browser: browser,page: page}
+  return item;
+}
+
+// Close browser
+async function closeBrowser(browser) {
+  await browser.close();
+  await mainWindow.webContents.send('log','Browser closed!');
+  console.log(`Browser closed!`);
 }

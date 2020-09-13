@@ -44,20 +44,20 @@
         parse(data, {columns: false, trim: true}, function(err, rows) {
             for (let index = 1; index < rows.length; index++) {
                 const elements = rows[index];
+                var dataJson = JSON.stringify(elements);
                 var str = "<th scope='row'>" + index.toString()+ "</th>";
                 elements.forEach(element => {
                     str += "<td>" +element+ "</td>";
                 });
-                str += `<td><button class='btn btn-primary btn-xs my-xs-btn' type='button' onClick='uploadFunc()' >` +
-                    "<span class='glyphicon glyphicon-pencil'></span> Upload </button></td>"
+                str += `<td><button class='btn btn-primary btn-xs my-xs-btn' type='button' onClick='selectFunc(` + dataJson + `)' >` +
+                    "<span class='glyphicon glyphicon-pencil'></span> Select </button></td>"
                 tableRef.insertRow().innerHTML = str;
             }
         }) 
     })
 
-    function uploadFunc() {
-        alert('clicked')
-        //ipcRenderer.send('upload-clicked', arrItems);
+    function selectFunc(arrayData) {
+        ipcRenderer.send('select-clicked', arrayData);
     }
 </script>
 </body>
