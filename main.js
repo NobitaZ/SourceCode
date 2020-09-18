@@ -142,11 +142,11 @@ async function mainProcess(arrAcc, arrItems){
   const accUsername = arrAcc[0];
   const accPassword = arrAcc[1];
   const arrImgPath = arrItems[0];
+  console.log(arrImgPath);
   const tagName = "BLEACH";//arrItems[1];
   var tagListStr = 'Bleach Manga Anime Cartoon Kid Room Hero Epic Japan Japanese Otaku Movie Book Character';
   const tagListArr = tagListStr.split(' ');
   const {page} =  await openBrowser();
-
   await page.setViewport({width: 1500, height: 768})
   await page.setDefaultNavigationTimeout(0);
   await page.goto(`https://society6.com/login`, {waitUntil: 'networkidle2'});
@@ -157,30 +157,19 @@ async function mainProcess(arrAcc, arrItems){
     page.keyboard.press('Enter'),
     page.waitForNavigation({ waitUntil: 'networkidle0' }),
   ]).catch((error) => {console.log(error)});;
-  const cookies = await page.cookies;
+  
+  
   await page.goto(`https://society6.com/artist-studio`);
   await myFunc.timeOutFunc(5000);
   await page.click('[qa-id="new_artwork_button"]');
   await page.type('[qa-id="artworkTitle"]',tagName);
+  await myFunc.timeOutFunc(3000);
   const [fileChooser] = await Promise.all([
     page.waitForFileChooser(),
     page.click('[qa-id="dropZone"]')
   ]).catch((error) => {console.log(error)});
 
   await fileChooser.accept(arrImgPath);
-  //const btnContinue = document.querySelector(`[qa-id="continue"]`);
-  // var btnContinue = await page.evaluate(() => {
-  //   var result = true;
-  //   let arrClassname = document.querySelector(`[qa-id="continue"]`).className.split(' ');
-  //   arrClassname.forEach(ele => {
-  //     if (ele.includes('Disabled')) {
-  //       result = false;
-  //     }
-  //   });
-  //   return result;
-  // });
-  // var selectorBtn = '[qa-id="continue"]';
-  // console.log(btnContinue);
   await page.waitForFunction(() => {
     let arrClassname = document.querySelector(`[qa-id="continue"]`).className.split(' ');
     var result = true;
@@ -190,9 +179,8 @@ async function mainProcess(arrAcc, arrItems){
       }
     });
     return result;
-  }, {});
-  //await myFunc.timeOutFunc(50000);
-  console.log('btn enable')
+  }, {timeout: 0});
+  await myFunc.timeOutFunc(1000);
   await page.click('[qa-id="continue"]');
   await myFunc.timeOutFunc(500);
   await page.click('[qa-id="copyrightApproved"]');
@@ -201,8 +189,34 @@ async function mainProcess(arrAcc, arrItems){
   await myFunc.timeOutFunc(2000);
   await Promise.all([
     page.click('[qa-id="continue"]'),
-    page.waitForNavigation({ waitUntil: 'networkidle0' }),
-  ]).catch((error) => {console.log(error)});;
+    page.waitForNavigation({ waitUntil: 'networkidle2' }),
+  ]).catch((error) => {console.log(error)});
+  await page.waitFor(5000);
+  await page.click('[qa-id="categoryDropdown"]');
+  
+  //const selectionID = ''; 
+  //find dropdown selection
+  
+  const selectionID = await page.evaluate(() => {
+    let arrDiv = document.querySelectorAll("[id^='react-select']");
+    let idSelect = '';
+    arrDiv.forEach(ele => {
+      if (ele.textContent == 'painting') {
+        idSelect = ele.id;
+      }
+    })
+    return idSelect;
+  });
+
+  await page.click('#' + selectionID);
+  for (let index = 0; index < tagListArr.length; index++) {
+    const element = tagListArr[index];
+    await page.type('#search-creatives', element);
+    await myFunc.timeOutFunc(1000);
+    await page.keyboard.press('Enter');
+    await myFunc.timeOutFunc(1000);
+  }
+
 }
 
 // Open browser
@@ -214,7 +228,7 @@ async function openBrowser() {
     args: [`--window-size=1500,768`]
   });
   console.log('Browser opened');
-  //await mainWindow.webContents.send('log','Browser openned');
+  await homeWindow.webContents.send('log','Browser openned');
   const page = await browser.newPage();
   let item = {browser: browser,page: page}
   return item;
