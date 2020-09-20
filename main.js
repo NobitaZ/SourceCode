@@ -144,12 +144,14 @@ async function mainProcess(arrAcc, arrItems){
   const arrImgPath = arrItems[0];
   console.log(arrImgPath);
   var wallArtList = ['Framed Mini Art Print','Mini Art Print','Art Print'];
-  const tagName = "BLEACH";//arrItems[1];
-  var tagListStr = 'Bleach Manga Anime Cartoon Kid Room Hero Epic Japan Japanese Otaku Movie Book Character';
-  const tagListArr = tagListStr.split(' ');
-  const {page} =  await openBrowser();
-  await page.setViewport({width: 1500, height: 768})
+  //const tagName = "BLEACH";//arrItems[1];
+  var tagListStr = 'Bleach,Manga,Anime,Cartoon,Kid,Room,Hero,Epic,Japan,Japanese,Otaku,Movie,Book,Character,Luffy,game of throne';
+  const tagListArr = tagListStr.split(',');
+  const {browser, page} =  await openBrowser();
+  await page.setViewport({width: 1500, height: 1080})
   await page.setDefaultNavigationTimeout(0);
+
+  //Login
   await page.goto(`https://society6.com/login`, {waitUntil: 'networkidle2'});
   await myFunc.timeOutFunc(1000);
   await page.type('#email',accUsername);
@@ -159,117 +161,152 @@ async function mainProcess(arrAcc, arrItems){
     page.waitForNavigation({ waitUntil: 'networkidle0' }),
   ]).catch((error) => {console.log(error)});;
 
-  //Testing
-  await page.goto(`https://society6.com/artist-studio/artwork/16948131`, {waitUntil: 'networkidle2'});
-  await myFunc.timeOutFunc(1000);
-  const arrWallArt = await page.evaluate((wallArtList) => {
-    var arrCardFooter = document.querySelectorAll("[class^='cardFooter']");
-    arrCardFooter = [...arrCardFooter];
-    var result = {};
-    var arrResult = [];
-    if (arrCardFooter !== 'undefined') {
-      for (let index = 0; index < wallArtList.length; index++) {
-        const element = wallArtList[index];
-        const found = arrCardFooter.find((v,i) => {
-          if (v.textContent.includes(element)) {
-            arrCardFooter.splice(i, 1);
-            return true;
+  //Process
+  if (arrImgPath.length > 0) {
+    for (let index = 0; index < arrImgPath.length; index++) {
+      //Get filename
+      const regexStr = /([^\\]+)(?=\.\w+$)/;
+      let imgPath = arrImgPath[index];
+      let artTitle = imgPath.match(regexStr)[0].replace(/\d+/g,'').trim();
+      let img = [];
+      img.push(imgPath);
+      // Upload img
+      await page.goto(`https://society6.com/artist-studio`);
+      await myFunc.timeOutFunc(3000);
+      await page.click('[qa-id="new_artwork_button"]');
+      await page.type('[qa-id="artworkTitle"]',artTitle);
+      await myFunc.timeOutFunc(1000);
+      const [fileChooser] = await Promise.all([
+        page.waitForFileChooser(),
+        page.click('[qa-id="dropZone"]')
+      ]).catch((error) => {console.log(error)});
+
+      await fileChooser.accept(img);
+
+      // Wait for button continue to enable
+      await page.waitForFunction(() => {
+        let arrClassname = document.querySelector(`[qa-id="continue"]`).className.split(' ');
+        var result = true;
+        arrClassname.forEach(ele => {
+          if (ele.includes('Disabled')) {
+            result = false;
           }
-          return false;
         });
-        arrResult.push(found);
+        return result;
+      }, {timeout: 0});
+
+      // Copyright 
+      await myFunc.timeOutFunc(500);
+      await page.click('[qa-id="continue"]');
+      await myFunc.timeOutFunc(500);
+      await page.click('[qa-id="copyrightApproved"]');
+      await myFunc.timeOutFunc(500);
+      await page.click('[qa-id="matureContentFalse"]');
+      await myFunc.timeOutFunc(1000);
+      await Promise.all([
+        page.click('[qa-id="continue"]'),
+        page.waitForNavigation({ waitUntil: 'networkidle2' }),
+      ]).catch((error) => {console.log(error)});
+      await page.waitFor(5000);
+      await page.click('[qa-id="categoryDropdown"]');
+      
+      //find dropdown selection
+      
+      //choose Category
+      const selectionID = await page.evaluate(() => {
+        let arrDiv = document.querySelectorAll("[id^='react-select']");
+        let idSelect = '';
+        arrDiv.forEach(ele => {
+          if (ele.textContent == 'painting') {
+            idSelect = ele.id;
+          }
+        })
+        return idSelect;
+      });
+
+      // Fill Tags
+      await page.click('#' + selectionID);
+      for (let index = 0; index < tagListArr.length; index++) {
+        const element = tagListArr[index];
+        await page.type('#search-creatives', element);
+        await myFunc.timeOutFunc(100);
+        await page.keyboard.press('Enter');
+        await myFunc.timeOutFunc(200);
       }
-      if (arrResult.length > 0) {
-        for (let index = 0; index < arrResult.length; index++) {
-          if (arrResult[index] !== 'undefined') {
-            if (arrResult[index].children[1].className.includes('enableSwitch')) {
-              arrResult[index].children[1].click();
+      
+      // Wall art type
+      await myFunc.timeOutFunc(1000);
+      const arrWallArt = await page.evaluate((wallArtList) => {
+        var arrCardFooter = document.querySelectorAll("[class^='cardFooter']");
+        arrCardFooter = [...arrCardFooter];
+        var result = {};
+        var arrResult = [];
+        if (arrCardFooter !== 'undefined') {
+          for (let index = 0; index < wallArtList.length; index++) {
+            const element = wallArtList[index];
+            const found = arrCardFooter.find((v,i) => {
+              if (v.textContent.includes(element)) {
+                arrCardFooter.splice(i, 1);
+                return true;
+              }
+              return false;
+            });
+            arrResult.push(found);
+          }
+          if (arrResult.length > 0) {
+            for (let index = 0; index < arrResult.length; index++) {
+              if (arrResult[index] !== 'undefined') {
+                if (arrResult[index].children[1].className.includes('enableSwitch')) {
+                  arrResult[index].children[1].click();
+                }
+              }
+            }
+          }
+
+          for (let index = 0; index < arrCardFooter.length; index++) {
+            if (arrCardFooter[index] !== 'undefined') {
+              if (arrCardFooter[index].children[1].className.includes('disableSwitch')) {
+                arrCardFooter[index].children[1].click();
+              }
             }
           }
         }
-      }
-
-      for (let index = 0; index < arrCardFooter.length; index++) {
-        if (arrCardFooter[index] !== 'undefined') {
-          if (arrCardFooter[index].children[1].className.includes('disableSwitch')) {
-            arrCardFooter[index].children[1].click();
-          }
+        result = {
+          arrWallArt: arrResult
         }
-      }
+        return result;
+      }, wallArtList);
+
+      //remove checkmark
+      await page.waitForFunction(() => {
+        let invalidTag = document.querySelector('div[class^="tagInvalid"]');
+        let result = false;
+        if (invalidTag == null || invalidTag === 'undefined') {
+          result = true;
+        } else {
+          invalidTag.children[1].click();
+        }
+        return result;
+      })
+
+      // Save and Publish
+      await page.click('[qa-id="save"]');
+      await myFunc.timeOutFunc(2000);
+      await page.click('[name="newsletterSignup"]');
+      await myFunc.timeOutFunc(100);
+      //await page.click('[class^="button_publishStatus"]');
+      await page.click('button[class^="button_publishStatus"]');
+      await page.waitForFunction(() => {
+        let selector = document.querySelectorAll('span[class^="status"]');
+        var result = false;
+        if (selector[0].innerHTML == 'published') {
+          result = true;
+        }
+        return result;
+      }, {timeout: 0});
     }
-    result = {
-      arrWallArt: arrResult
-    }
-    return result;
-  }, wallArtList);
-  // if (arrWallArt.length > 0) {
-  //   for (let index = 0; index < arrWallArt.length; index++) {
-  //     const element = arrWallArt[index];
-      
-  //   }
-  // }
-  
-
-  /*
-  await page.goto(`https://society6.com/artist-studio`);
-  await myFunc.timeOutFunc(3000);
-  await page.click('[qa-id="new_artwork_button"]');
-  await page.type('[qa-id="artworkTitle"]',tagName);
-  await myFunc.timeOutFunc(3000);
-  const [fileChooser] = await Promise.all([
-    page.waitForFileChooser(),
-    page.click('[qa-id="dropZone"]')
-  ]).catch((error) => {console.log(error)});
-
-  await fileChooser.accept(arrImgPath);
-  await page.waitForFunction(() => {
-    let arrClassname = document.querySelector(`[qa-id="b  continue"]`).className.split(' ');
-    var result = true;
-    arrClassname.forEach(ele => {
-      if (ele.includes('Disabled')) {
-        result = false;
-      }
-    });
-    return result;
-  }, {timeout: 0});
-  await myFunc.timeOutFunc(500);
-  await page.click('[qa-id="continue"]');
-  await myFunc.timeOutFunc(500);
-  await page.click('[qa-id="copyrightApproved"]');
-  await myFunc.timeOutFunc(500);
-  await page.click('[qa-id="matureContentFalse"]');
-  await myFunc.timeOutFunc(1000);
-  await Promise.all([
-    page.click('[qa-id="continue"]'),
-    page.waitForNavigation({ waitUntil: 'networkidle2' }),
-  ]).catch((error) => {console.log(error)});
-  await page.waitFor(5000);
-  await page.click('[qa-id="categoryDropdown"]');
-  
-  //const selectionID = ''; 
-  //find dropdown selection
-  
-  const selectionID = await page.evaluate(() => {
-    let arrDiv = document.querySelectorAll("[id^='react-select']");
-    let idSelect = '';
-    arrDiv.forEach(ele => {
-      if (ele.textContent == 'painting') {
-        idSelect = ele.id;
-      }
-    })
-    return idSelect;
-  });
-
-  await page.click('#' + selectionID);
-  for (let index = 0; index < tagListArr.length; index++) {
-    const element = tagListArr[index];
-    await page.type('#search-creatives', element);
-    await myFunc.timeOutFunc(100);
-    await page.keyboard.press('Enter');
-    await myFunc.timeOutFunc(100);
   }
-  */
-
+  await closeBrowser(browser).catch((error) => {console.log(error)});
 }
 
 // Open browser
@@ -278,7 +315,7 @@ async function openBrowser() {
     executablePath:`${process.cwd()}\\chrome\\chrome.exe`, 
     headless: false,
     ignoreHTTPSErrors: true,
-    args: [`--window-size=1500,768`]
+    args: [`--window-size=1500,1080`]
   });
   console.log('Browser opened');
   await homeWindow.webContents.send('log','Browser openned');
@@ -290,6 +327,6 @@ async function openBrowser() {
 // Close browser
 async function closeBrowser(browser) {
   await browser.close();
-  await mainWindow.webContents.send('log','Browser closed!');
+  //await mainWindow.webContents.send('log','Browser closed!');
   console.log(`Browser closed!`);
 }

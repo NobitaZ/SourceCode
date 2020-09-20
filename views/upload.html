@@ -60,23 +60,20 @@
     var arr = {}
     function uploadFunc() {
         const regexStr = /([^\\]+$)/;
-        const imgs = dialog.showOpenDialogSync(
-            {
-                title: 'Image Upload',
-                properties:['openFile', 'multiSelections'],
-                filters: [{
-                    name: 'Images',
-                    extensions: ['jpg', 'png', 'rgb']
-                }]
-            })
-            arr = imgs;
-            fileName.innerHTML = "";
-            imgs.forEach(imgPath => {
-                var test = imgPath.split(regexStr)
-                fileName.innerHTML += test[1] + "<br>";
-            });;
-
-        
+        const imgs = dialog.showOpenDialogSync({
+            title: 'Image Upload',
+            properties:['openFile', 'multiSelections'],
+            filters: [{
+                name: 'Images',
+                extensions: ['jpg', 'png', 'rgb']
+            }]
+        })
+        arr = imgs;
+        fileName.innerHTML = "";
+        imgs.forEach(imgPath => {
+            var imgName = imgPath.split(regexStr)
+            fileName.innerHTML += imgName[1] + "<br>";
+        });;
     }
     const btnProcess = document.getElementById("btnProcess");
     btnProcess.addEventListener("click", function (e) {
