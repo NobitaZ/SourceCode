@@ -143,6 +143,7 @@ async function mainProcess(arrAcc, arrItems){
   const accPassword = arrAcc[1];
   const arrImgPath = arrItems[0];
   console.log(arrImgPath);
+  var wallArtList = ['Framed Mini Art Print','Mini Art Print','Art Print'];
   const tagName = "BLEACH";//arrItems[1];
   var tagListStr = 'Bleach Manga Anime Cartoon Kid Room Hero Epic Japan Japanese Otaku Movie Book Character';
   const tagListArr = tagListStr.split(' ');
@@ -157,10 +158,61 @@ async function mainProcess(arrAcc, arrItems){
     page.keyboard.press('Enter'),
     page.waitForNavigation({ waitUntil: 'networkidle0' }),
   ]).catch((error) => {console.log(error)});;
+
+  //Testing
+  await page.goto(`https://society6.com/artist-studio/artwork/16948131`, {waitUntil: 'networkidle2'});
+  await myFunc.timeOutFunc(1000);
+  const arrWallArt = await page.evaluate((wallArtList) => {
+    var arrCardFooter = document.querySelectorAll("[class^='cardFooter']");
+    arrCardFooter = [...arrCardFooter];
+    var result = {};
+    var arrResult = [];
+    if (arrCardFooter !== 'undefined') {
+      for (let index = 0; index < wallArtList.length; index++) {
+        const element = wallArtList[index];
+        const found = arrCardFooter.find((v,i) => {
+          if (v.textContent.includes(element)) {
+            arrCardFooter.splice(i, 1);
+            return true;
+          }
+          return false;
+        });
+        arrResult.push(found);
+      }
+      if (arrResult.length > 0) {
+        for (let index = 0; index < arrResult.length; index++) {
+          if (arrResult[index] !== 'undefined') {
+            if (arrResult[index].children[1].className.includes('enableSwitch')) {
+              arrResult[index].children[1].click();
+            }
+          }
+        }
+      }
+
+      for (let index = 0; index < arrCardFooter.length; index++) {
+        if (arrCardFooter[index] !== 'undefined') {
+          if (arrCardFooter[index].children[1].className.includes('disableSwitch')) {
+            arrCardFooter[index].children[1].click();
+          }
+        }
+      }
+    }
+    result = {
+      arrWallArt: arrResult
+    }
+    return result;
+  }, wallArtList);
+  // if (arrWallArt.length > 0) {
+  //   for (let index = 0; index < arrWallArt.length; index++) {
+  //     const element = arrWallArt[index];
+      
+  //   }
+  // }
   
-  
+
+  /*
   await page.goto(`https://society6.com/artist-studio`);
-  await myFunc.timeOutFunc(5000);
+  await myFunc.timeOutFunc(3000);
   await page.click('[qa-id="new_artwork_button"]');
   await page.type('[qa-id="artworkTitle"]',tagName);
   await myFunc.timeOutFunc(3000);
@@ -171,7 +223,7 @@ async function mainProcess(arrAcc, arrItems){
 
   await fileChooser.accept(arrImgPath);
   await page.waitForFunction(() => {
-    let arrClassname = document.querySelector(`[qa-id="continue"]`).className.split(' ');
+    let arrClassname = document.querySelector(`[qa-id="b  continue"]`).className.split(' ');
     var result = true;
     arrClassname.forEach(ele => {
       if (ele.includes('Disabled')) {
@@ -180,13 +232,13 @@ async function mainProcess(arrAcc, arrItems){
     });
     return result;
   }, {timeout: 0});
-  await myFunc.timeOutFunc(1000);
+  await myFunc.timeOutFunc(500);
   await page.click('[qa-id="continue"]');
   await myFunc.timeOutFunc(500);
   await page.click('[qa-id="copyrightApproved"]');
   await myFunc.timeOutFunc(500);
   await page.click('[qa-id="matureContentFalse"]');
-  await myFunc.timeOutFunc(2000);
+  await myFunc.timeOutFunc(1000);
   await Promise.all([
     page.click('[qa-id="continue"]'),
     page.waitForNavigation({ waitUntil: 'networkidle2' }),
@@ -212,10 +264,11 @@ async function mainProcess(arrAcc, arrItems){
   for (let index = 0; index < tagListArr.length; index++) {
     const element = tagListArr[index];
     await page.type('#search-creatives', element);
-    await myFunc.timeOutFunc(1000);
+    await myFunc.timeOutFunc(100);
     await page.keyboard.press('Enter');
-    await myFunc.timeOutFunc(1000);
+    await myFunc.timeOutFunc(100);
   }
+  */
 
 }
 
