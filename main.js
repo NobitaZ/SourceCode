@@ -4,18 +4,18 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const User = require(path.join(__dirname, 'models/User'));
 const Logs = require(path.join(__dirname, 'models/Logs'));
-const {app, BrowserWindow, Menu, ipcMain, remote} = require('electron');
+const {app, BrowserWindow, Menu, ipcMain, remote, dialog} = require('electron');
 const config = require(path.join(__dirname, './config/keys'));
 const fs = require('fs');
 const myFunc = require(path.join(__dirname, './src/windowRenderer'));
 //const $ = jQuery = require('jquery');
-var parse = require('csv-parse');
+//var parse = require('csv-parse');
 
 //Enviroment
 process.env.NODE_ENV = 'development';
 //process.env.NODE_ENV = 'production';
 
-let mainWindow,homeWindow;
+let mainWindow, homeWindow, uploadWindow;
 
 // Config
 const db = config.mongoURI;
@@ -54,7 +54,7 @@ function createWindow () {
 // Create home window
 function createHomeWindow(){
   homeWindow = new BrowserWindow({
-    width: 1024,
+    width: 1280,
     height:800,
     resizable: false,
     darkTheme: true,
@@ -68,6 +68,28 @@ function createHomeWindow(){
   homeWindow.loadURL(path.join(__dirname, './views/home.html'));
   homeWindow.on('close', function(){
     homeWindow = null;
+  });
+  const mainMenu = Menu.buildFromTemplate(myFunc.mainMenuTemplate(app));
+  Menu.setApplicationMenu(mainMenu);
+}
+
+// Create upload window
+function createUploadWindow(){
+  uploadWindow = new BrowserWindow({
+    width: 1024,
+    height:900,
+    resizable: false,
+    darkTheme: true,
+    title:'Society Upload Tool',
+    webPreferences: {
+      nodeIntegration: true,
+      enableRemoteModule: true
+    }
+  });
+  uploadWindow.removeMenu();
+  uploadWindow.loadURL(path.join(__dirname, './views/upload.html'));
+  uploadWindow.on('close', function(){
+    uploadWindow = null;
   });
   const mainMenu = Menu.buildFromTemplate(myFunc.mainMenuTemplate(app));
   Menu.setApplicationMenu(mainMenu);
@@ -126,15 +148,18 @@ ipcMain.on('auth-form',function(e, item) {
 var arrAcc = {}
 // Handle select button click
 ipcMain.on('select-clicked', function (e, arrItems) {
-  homeWindow.loadURL(path.join(__dirname, './views/upload.html'));
+  //homeWindow.loadURL(path.join(__dirname, './views/upload.html'));
+  createUploadWindow();
   arrAcc = arrItems;
 //console.log(app.getAppPath())
-  console.log(arrAcc)
+  //console.log(arrAcc)
 })
 
 // Handle upload button click
 ipcMain.on('upload-clicked', function(e, arrItems) {
+  console.log(arrItems)
   mainProcess(arrAcc,arrItems);
+  uploadWindow.close();
 })
 
 //Main process function
@@ -142,13 +167,12 @@ async function mainProcess(arrAcc, arrItems){
   const accUsername = arrAcc[0];
   const accPassword = arrAcc[1];
   const arrImgPath = arrItems[0];
-  console.log(arrImgPath);
   var wallArtList = ['Framed Mini Art Print','Mini Art Print','Art Print'];
   //const tagName = "BLEACH";//arrItems[1];
   var tagListStr = 'Bleach,Manga,Anime,Cartoon,Kid,Room,Hero,Epic,Japan,Japanese,Otaku,Movie,Book,Character,Luffy,game of throne';
   const tagListArr = tagListStr.split(',');
   const {browser, page} =  await openBrowser();
-  await page.setViewport({width: 1500, height: 1080})
+  await page.setViewport({width: 1500, height: 900})
   await page.setDefaultNavigationTimeout(0);
 
   //Login
@@ -156,18 +180,31 @@ async function mainProcess(arrAcc, arrItems){
   await myFunc.timeOutFunc(1000);
   await page.type('#email',accUsername);
   await page.type('#password',accPassword);
+  // await page.keyboard.press('Enter');
+  //await myFunc.timeOutFunc(1000);
+  // const invalidLogin = await page.evaluate(() => {
+  //   let errMsg = document.querySelector('.app-messages');
+  //   if (errMsg != null || errMsg !== 'undefined') {
+      //homeWindow.webContents.send('logs', 'Login error');
+      //closeBrowser(browser);
+  //   }
+  // });
+  // await page.waitForNavigation({waitUntil: 'networkidle2'});
+
   await Promise.all([
     page.keyboard.press('Enter'),
     page.waitForNavigation({ waitUntil: 'networkidle0' }),
-  ]).catch((error) => {console.log(error)});;
+  ]).catch((error) => {console.log(error)});
 
+  await homeWindow.webContents.send('logs','Login success');
+  await homeWindow.webContents.send('logs',`Acc: ${accUsername}`);
   //Process
   if (arrImgPath.length > 0) {
     for (let index = 0; index < arrImgPath.length; index++) {
       //Get filename
       const regexStr = /([^\\]+)(?=\.\w+$)/;
       let imgPath = arrImgPath[index];
-      let artTitle = imgPath.match(regexStr)[0].replace(/\d+/g,'').trim();
+      let artTitle = imgPath.match(regexStr)[0].replace(/[^a-zA-Z ]/g,'').trim();
       let img = [];
       img.push(imgPath);
       // Upload img
@@ -182,7 +219,7 @@ async function mainProcess(arrAcc, arrItems){
       ]).catch((error) => {console.log(error)});
 
       await fileChooser.accept(img);
-
+      await homeWindow.webContents.send('logs',`Upload img ${artTitle} success`);
       // Wait for button continue to enable
       await page.waitForFunction(() => {
         let arrClassname = document.querySelector(`[qa-id="continue"]`).className.split(' ');
@@ -315,10 +352,10 @@ async function openBrowser() {
     executablePath:`${process.cwd()}\\chrome\\chrome.exe`, 
     headless: false,
     ignoreHTTPSErrors: true,
-    args: [`--window-size=1500,1080`]
+    args: [`--window-size=1500,900`]
   });
   console.log('Browser opened');
-  await homeWindow.webContents.send('log','Browser openned');
+  await homeWindow.webContents.send('logs','Browser openned');
   const page = await browser.newPage();
   let item = {browser: browser,page: page}
   return item;

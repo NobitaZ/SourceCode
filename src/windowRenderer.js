@@ -1,6 +1,6 @@
 //Main renderer
 
-let remote = require('electron').remote;
+//let remote = require('electron').remote;
 
 //let mainApp = remote.require(path.join(__dirname, './main'));
 

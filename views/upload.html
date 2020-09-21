@@ -10,20 +10,24 @@
         body {
             font-family: 'Varela Round', sans-serif;
         }
-        .container .row .upload-form {
-            color: #636363;
-            background-color: #636363;
-            width: 400px;
-            margin: 50px auto;
+        /* Style to center grid column */
+        .col-centered{
+            float: none;
+            margin: 0 auto;
         }
-        .container .btn {
-            margin: 100px, 100px;
+        
+        /* Some custom styles to beautify this example */
+        /* .row{
+            background: #dbdfe5;
+        } */
+        /* .form-control {
+            margin: auto auto 0px -30px;
+        } */
+        .demo-content{
+            padding: 25px;
+            font-size: 18px;
+            background: #abb1b8;
         }
-        #btnProcess {
-            display: flex;
-            justify-content: center;
-        }
-
     </style>
 </head>
 <body>
@@ -32,22 +36,24 @@
     </nav>
     <br>
     <div id="container">
-        <div class="row">
-            <div id="upload-form" class="col-sm-6">
+        <div class="row my-3">
+            <div id="upload-form" class="col-sm-6 text-center">
                 <button class='btn btn-primary btn-xs my-xs-btn' type='button' onClick='uploadFunc()'>
                 <span class='glyphicon glyphicon-pencil'></span> Upload </button><br>
                 <span id="file-name"></span>
             </div>
-            <div id="tag-form" class="col-sm-6">
+            <div id="tag-form" class="col-sm-6 text-center">
                 <form>
                     <span>Tag name</span>
                     <input type="text" class="form-control" id="tagname" name="tagname" placeholder="Tag">
                 </form>
             </div>
         </div>
-        <div class="row">
-            <button id="btnProcess" class='btn btn-primary btn-xs my-xs-btn' type='button'>
+        <div class="row my-3">
+            <div class="col-sm-12 text-center">
+                <button id="btnProcess" class='btn btn-primary btn-xs my-xs-btn' type='button'>
                 <span class='glyphicon glyphicon-pencil'></span> Submit </button><br>
+            </div>
         </div>
     </div>
 <script>
@@ -73,14 +79,20 @@
         imgs.forEach(imgPath => {
             var imgName = imgPath.split(regexStr)
             fileName.innerHTML += imgName[1] + "<br>";
-        });;
+        });
     }
     const btnProcess = document.getElementById("btnProcess");
     btnProcess.addEventListener("click", function (e) {
         e.preventDefault;
         var tagName = document.getElementById('tagname');
-        const items = [arr, tagName.value]
-        ipcRenderer.send('upload-clicked', items);
+        const items = [arr, tagName.value];
+        if (arr == null || arr == '' || JSON.stringify(arr) == '{}') {
+            const errMsgBox = dialog.showErrorBox('No Images Selected !!!', '');
+        } else if (tagName.value == '') {
+            const errMsgBox = dialog.showErrorBox('No Tag Name !!!', '');
+        } else {
+            ipcRenderer.send('upload-clicked', items);
+        }
     })
 </script>
 </body>
