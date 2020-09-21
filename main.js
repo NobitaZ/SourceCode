@@ -7,6 +7,7 @@ const Logs = require(path.join(__dirname, 'models/Logs'));
 const {app, BrowserWindow, Menu, ipcMain, remote, dialog} = require('electron');
 const config = require(path.join(__dirname, './config/keys'));
 const fs = require('fs');
+const parse = require('csv-parse')
 const myFunc = require(path.join(__dirname, './src/windowRenderer'));
 //const $ = jQuery = require('jquery');
 //var parse = require('csv-parse');
@@ -157,7 +158,7 @@ ipcMain.on('select-clicked', function (e, arrItems) {
 
 // Handle upload button click
 ipcMain.on('upload-clicked', function(e, arrItems) {
-  console.log(arrItems)
+  //console.log('arrItems: ' + arrItems);
   mainProcess(arrAcc,arrItems);
   uploadWindow.close();
 })
@@ -167,10 +168,67 @@ async function mainProcess(arrAcc, arrItems){
   const accUsername = arrAcc[0];
   const accPassword = arrAcc[1];
   const arrImgPath = arrItems[0];
-  var wallArtList = ['Framed Mini Art Print','Mini Art Print','Art Print'];
-  //const tagName = "BLEACH";//arrItems[1];
-  var tagListStr = 'Bleach,Manga,Anime,Cartoon,Kid,Room,Hero,Epic,Japan,Japanese,Otaku,Movie,Book,Character,Luffy,game of throne';
-  const tagListArr = tagListStr.split(',');
+  //var wallArtList = ['Framed Mini Art Print','Mini Art Print','Art Print'];
+  const wallArtList = [];
+
+  // Read product
+  fs.readFile(path.join(__dirname, './product.csv'), function(err, data) {
+    if (err) {
+        throw err;
+    }
+    parse(data, {columns: false, trim: true}, function(err, rows) {
+        let elements = rows[0];
+        elements.forEach(element => {
+          wallArtList.push(element);
+        });
+    });
+  });
+
+  // Read tag
+  var arrTags = [];
+  var tagNameVal = arrItems[1].split(',');
+  var nicheVal = tagNameVal[0];
+  var subNicheVal = tagNameVal[1];
+  let nicheIndex = 0;
+  let nextNicheIndex = 0;
+  fs.readFile('./tags.csv', function(err, data) {
+    if (err) {
+        throw err;
+    }
+    parse(data, {columns: false, trim: true}, function(err, rows) {
+        //debugger;
+        if (err) {
+            throw err;
+        }
+        for (let index = 1; index < rows.length; index++) {
+            const element = rows[index];
+            if (element[0].trim() == nicheVal) {
+                nicheIndex = index;
+                continue;
+            }
+            if (element[0] != '' && index > nicheIndex && nicheIndex != 0) {
+                nextNicheIndex = index;
+                break;
+            }
+        }
+        //debugger;
+        for (let i = nicheIndex; i < nextNicheIndex; i++) {
+            const element = rows[i];
+            if (element[1].trim() == subNicheVal) {
+                arrTags.push(element[2].trim());
+                break;
+            }
+        }
+    });
+  });
+  // var tagListStr = 'Bleach,Manga,Anime,Cartoon,Kid,Room,Hero,Epic,Japan,Japanese,Otaku,Movie,Book,Character,Luffy,game of throne';
+  // const tagListArr = tagListStr.split(',');
+  var tagListArr = []
+  setTimeout(() => {
+    tagListArr = arrTags[0].split(' ');
+    console.log(tagListArr);
+  }, 3000);
+  
   const {browser, page} =  await openBrowser();
   await page.setViewport({width: 1500, height: 900})
   await page.setDefaultNavigationTimeout(0);

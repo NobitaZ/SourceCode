@@ -104,7 +104,7 @@
     const {ipcRenderer, dialog} = electron;
     const path = require('path');
     const fs = require('fs');
-    const fsPro = require('fs').promises;
+    
     var tableRef = document.getElementById('userTable').getElementsByTagName('tbody')[0];
     var productArea = document.getElementById('product-area');
     var ul = document.querySelector('ul');
@@ -139,17 +139,12 @@
         if (err) {
             throw err;
         }
-        console.log(data);
+        //console.log(data);
         parse(data, {columns: false, trim: true}, function(err, rows) {
-            //for (let index = 1; index < rows.length; index++) {
-                //const elements = rows[index];
-                console.log(rows);
-                const elements = rows[0];
-                elements.forEach(element => {
-                    productArea.value += element + '\n';
-                });
-                
-            //}
+            const elements = rows[0];
+            elements.forEach(element => {
+                productArea.value += element + '\n';
+            });
         });
     })
     function openTab(evt, tabName) {
