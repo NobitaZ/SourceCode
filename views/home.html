@@ -89,6 +89,7 @@
         <h3>Products</h3>
         <textarea id="product-area" class="textarea"></textarea>
         <button class='btn btn-primary btn-xs my-xs-btn btnSave' type='button' onclick='saveFunc()'><span class='glyphicon glyphicon-pencil'></span> Save </button>
+        <div id="msg-product"></div>
     </div>
     
     <div id="logs" class="tabcontent">
@@ -103,9 +104,11 @@
     const {ipcRenderer, dialog} = electron;
     const path = require('path');
     const fs = require('fs');
+    const fsPro = require('fs').promises;
     var tableRef = document.getElementById('userTable').getElementsByTagName('tbody')[0];
     var productArea = document.getElementById('product-area');
     var ul = document.querySelector('ul');
+    const msgDiv = document.querySelector('#msg-product');
     ipcRenderer.on('logs', function(e, item){
         // ul.className = 'collection';
         const li = document.createElement('li');
@@ -138,10 +141,15 @@
         }
         console.log(data);
         parse(data, {columns: false, trim: true}, function(err, rows) {
-            for (let index = 1; index < rows.length; index++) {
-                const elements = rows[index];
-                productArea.value += elements + '\n';
-            }
+            //for (let index = 1; index < rows.length; index++) {
+                //const elements = rows[index];
+                console.log(rows);
+                const elements = rows[0];
+                elements.forEach(element => {
+                    productArea.value += element + '\n';
+                });
+                
+            //}
         });
     })
     function openTab(evt, tabName) {
@@ -175,14 +183,21 @@
         let columns = {
             product: 'Product'
         };
-        const syncWrite = deasync(fs.writeFile);
-        let data = productArea.value.split('\n');
-        stringify(data, {header: true, columns: columns}, function(err, output) {
-            if (err) throw err;
-            syncWrite('./product.csv', output, (err) => {
-                if (err) throw err;
-                console.log('product.csv saved.');
-            });
+        let textSplit = productArea.value.split('\n');
+        let data = []
+        data.push(textSplit);
+        stringify(data, function(err, output){
+            fs.writeFile("./product.csv", output, function(err) {
+                if (err) {
+                    throw err;
+                }
+                msgDiv.style.display = "block"
+                msgDiv.className = 'alert alert-success alert-dismissible show';
+                msgDiv.innerHTML = 'Successfully Saved';
+                setTimeout(() => {
+                    msgDiv.style.display = "none"
+                }, 2000);
+            })
         })
     }
 </script>
