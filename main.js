@@ -163,6 +163,45 @@ ipcMain.on('upload-clicked', function(e, arrItems) {
   uploadWindow.close();
 })
 
+//Read file function
+function readTagsFile(arrItems,arrTags) {
+  return new Promise((resolve, reject) => {
+    var tagNameVal = arrItems[1].split(',');
+    var nicheVal = tagNameVal[0];
+    var subNicheVal = tagNameVal[1];
+    var nicheIndex = 0;
+    var nextNicheIndex = 0;
+    fs.readFile(path.join(__dirname, './tags.csv'), 'utf8', function (error, data) {
+      if (error) return reject(error);
+      parse(data, {columns: false, trim: true}, function(err, rows) {
+        //debugger;
+        if (err) {
+            throw err;
+        }
+        for (let index = 1; index < rows.length; index++) {
+            const element = rows[index];
+            if (element[0].trim() == nicheVal) {
+                nicheIndex = index;
+                continue;
+            }
+            if (element[0] != '' && index > nicheIndex && nicheIndex != 0) {
+                nextNicheIndex = index;
+                break;
+            }
+        }
+        //debugger;
+        for (let i = nicheIndex; i < nextNicheIndex; i++) {
+            const element = rows[i];
+            if (element[1].trim() == subNicheVal) {
+                arrTags.push(element[2].trim());
+                break;
+            }
+        }
+      });
+      resolve(arrTags);
+    })
+  });
+}
 //Main process function
 async function mainProcess(arrAcc, arrItems){
   const accUsername = arrAcc[0];
@@ -185,13 +224,16 @@ async function mainProcess(arrAcc, arrItems){
   });
 
   // Read tag
+  var tagListArr = []
   var arrTags = [];
+
   var tagNameVal = arrItems[1].split(',');
   var nicheVal = tagNameVal[0];
   var subNicheVal = tagNameVal[1];
-  let nicheIndex = 0;
-  let nextNicheIndex = 0;
-  fs.readFile('./tags.csv', function(err, data) {
+  var nicheIndex = 0;
+  var nextNicheIndex = 0;
+  //const arrTagsName = await readTagsFile(arrItems, arrTags);
+  fs.readFile(path.join(__dirname, './tags.csv'), function(err, data) {
     if (err) {
         throw err;
     }
@@ -223,11 +265,11 @@ async function mainProcess(arrAcc, arrItems){
   });
   // var tagListStr = 'Bleach,Manga,Anime,Cartoon,Kid,Room,Hero,Epic,Japan,Japanese,Otaku,Movie,Book,Character,Luffy,game of throne';
   // const tagListArr = tagListStr.split(',');
-  var tagListArr = []
+
   setTimeout(() => {
     tagListArr = arrTags[0].split(' ');
     console.log(tagListArr);
-  }, 3000);
+  }, 10000);
   
   const {browser, page} =  await openBrowser();
   await page.setViewport({width: 1500, height: 900})
@@ -265,6 +307,8 @@ async function mainProcess(arrAcc, arrItems){
       let artTitle = imgPath.match(regexStr)[0].replace(/[^a-zA-Z ]/g,'').trim();
       let img = [];
       img.push(imgPath);
+      tagListArr.splice(0,0,artTitle);
+      console.log(tagListArr);
       // Upload img
       await page.goto(`https://society6.com/artist-studio`);
       await myFunc.timeOutFunc(3000);
