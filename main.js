@@ -191,9 +191,14 @@ ipcMain.on('import-clicked', function (e, item) {
   createImportWindow();
 })
 
+ipcMain.on('import-success', function(e, item) {
+  importWindow.close();
+  homeWindow.webContents.send('reload-acc-info','reload');
+})
+
 // Handle upload button click
 ipcMain.on('upload-clicked', function(e, arrItems) {
-  //console.log('arrItems: ' + arrItems);
+  console.log('arrItems: ' + arrItems);
   mainProcess(arrAcc,arrItems);
   uploadWindow.close();
 })
@@ -244,7 +249,7 @@ async function mainProcess(arrAcc, arrItems){
   const proxyIP = arrAcc[2];
   const proxyUser = arrAcc[3];
   const proxyPass = arrAcc[4];
-  const arrImgPath = arrItems[0];
+  const arrImgPath = arrItems[0]
   //var wallArtList = ['Framed Mini Art Print','Mini Art Print','Art Print'];
   const wallArtList = [];
 
@@ -351,12 +356,12 @@ async function mainProcess(arrAcc, arrItems){
       let imgPath = arrImgPath[index];
       let imgName = imgPath.replace(/^.*[\\\/]/,'');
       let imgDirname = path.dirname(imgPath);
-      console.log('imgDirname: ' + imgDirname)
-      console.log('imgPath: ' + imgPath)
+      // console.log('imgDirname: ' + imgDirname)
+      // console.log('imgPath: ' + imgPath)
       let artTitle = imgPath.match(regexStr)[0].replace(/[^a-zA-Z ]/g,'').trim();
       let img = [];
       img.push(imgPath);
-      console.log('img ' + img)
+      // console.log('img ' + img)
       let artTitleSplit = artTitle.split(' ');
       artTitleSplit.forEach(element => {
         tagListArr.splice(0,0,element);

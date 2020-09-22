@@ -29,90 +29,50 @@
     </nav>
     <br>
     <div id="container">
-        <textarea class="import-area"></textarea>
-        <button class='btn btn-primary btn-xs my-xs-btn btnImport' type='button' onclick='saveFunc()'><span class='glyphicon glyphicon-pencil'></span> Save </button>
+        <textarea class="import-area" id="import-area"></textarea>
+        <button id='btnImport' class='btn btn-primary btn-xs my-xs-btn btnImport' type='button'><span class='glyphicon glyphicon-pencil'></span> Save </button>
         <div id="msg-acc-import"></div>
     </div>
 <script>
     const electron = require('electron').remote;
+    const stringify = require('csv-stringify');
     const {dialog} = electron;
     const {ipcRenderer} = require('electron');
-    const parse = require('csv-parse')
+    //const parse = require('csv-parse')
     const path = require('path');
     const fs = require('fs');
 
-    const fileName = document.getElementById('file-name');
-    var tagName = document.getElementById('tagname');
-    var arrImgs = {};
-    function uploadFunc() {
-        const regexStr = /([^\\]+$)/;
-        const imgs = dialog.showOpenDialogSync({
-            title: 'Image Upload',
-            properties:['openFile', 'multiSelections'],
-            filters: [{
-                name: 'Images',
-                extensions: ['jpg', 'png', 'rgb']
-            }]
-        })
-        arrImgs = imgs;
-        fileName.innerHTML = "";
-        imgs.forEach(imgPath => {
-            var imgName = imgPath.split(regexStr)
-            fileName.innerHTML += imgName[1] + "<br>";
-        });
-    }
-
-    function readTags() {
-        var tagNameVal = tagName.value.split(',');
-        var nicheVal = tagNameVal[0];
-        var subNicheVal = tagNameVal[1];
-        let nicheIndex = 0;
-        let nextNicheIndex = 0;
-        fs.readFile('./tags.csv', function(err, data) {
-            if (err) {
-                throw err;
-            }
-            parse(data, {columns: false, trim: true}, function(err, rows) {
-                //debugger;
-                if (err) {
-                    throw err;
-                }
-                for (let index = 1; index < rows.length; index++) {
-                    const element = rows[index];
-                    if (element[0].trim() == nicheVal) {
-                        nicheIndex = index;
-                        continue;
-                    }
-                    if (element[0] != '' && index > nicheIndex && nicheIndex != 0) {
-                        nextNicheIndex = index;
-                        break;
-                    }
-                }
-                //debugger;
-                for (let i = nicheIndex; i < nextNicheIndex; i++) {
-                    const element = rows[i];
-                    if (element[1].trim() == subNicheVal) {
-                        arrTags.push(element[2].trim());
-                        break;
-                    }
-                }
-            });
-        });
-    }
-
-    const btnProcess = document.getElementById("btnProcess");
-    btnProcess.addEventListener("click", function (e) {
+    const btnImport = document.getElementById("btnImport");
+    btnImport.addEventListener("click", function (e) {
         e.preventDefault;
         //readTags();
-        if (arrImgs == null || arrImgs == '' || JSON.stringify(arrImgs) == '{}') {
-            const errMsgBox = dialog.showErrorBox('No Images Selected !!!', '');
-        } else if (tagName.value == '') {
-            const errMsgBox = dialog.showErrorBox('No Tag Name !!!', '');
-        } else if (!tagName.value.includes(',')) {
-            const errMsgBox = dialog.showErrorBox('Wrong format Tag Name !!!', '');
+        const inpTextArea = document.querySelector('#import-area').value;
+        if (inpTextArea == null || inpTextArea == '' || JSON.stringify(inpTextArea) == '{}') {
+            const errMsgBox = dialog.showErrorBox('Account can not be empty !!!', '');
         } else {
-            const items = [arrImgs, tagName.value];
-            ipcRenderer.send('upload-clicked', items);
+            let columns = {
+                account: 'Account',
+                password: 'Password',
+                proxy: 'Proxy',
+                proxyusername: 'ProxyUsername',
+                proxypassword: 'ProxyPassword'
+            };
+            let textSplit = inpTextArea.split('\n');
+            let data = []
+            for (let index = 0; index < textSplit.length; index++) {
+                const row = textSplit[index].split('	');
+                if (row != '') {
+                    data.push(row);
+                }
+            }
+            stringify(data, {header: true, columns:columns}, function(err, output){
+                fs.writeFile("./info.csv", output, function(err) {
+                    if (err) {
+                        throw err;
+                    }
+                    ipcRenderer.send('import-success','success');
+                })
+            })
         }
     })
 </script>

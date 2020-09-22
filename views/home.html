@@ -121,6 +121,9 @@
         li.appendChild(itemText);
         ul.appendChild(li);
     });
+    ipcRenderer.on('reload-acc-info', function (e, item) {
+        readAccInfo();
+    })
     function readAccInfo() {
         fs.readFile("./info.csv", function(err, data) {
             if (err) {
