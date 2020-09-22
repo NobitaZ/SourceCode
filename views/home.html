@@ -66,6 +66,9 @@
         <button class="tablinks" onclick="openTab(event, 'product')">Products</button>
         <button class="tablinks" onclick="openTab(event, 'logs')">Logs</button>
     </div>
+    <div class="col-sm-12 text-right">
+        <button class='btn btn-warning btn-xs my-xs-btn btnImport' type='button' onclick='importFunc()'><span class='glyphicon glyphicon-pencil'></span> Import Account </button>
+    </div>
     <div id="account" class="tabcontent" style="display: block;">
         <table id="userTable" class="table table-hover">
             <thead>
@@ -101,6 +104,7 @@
     const stringify = require('csv-stringify');
     const parse = require('csv-parse')
     const electron = require('electron');
+    const remote = electron.remote;
     const {ipcRenderer, dialog} = electron;
     const path = require('path');
     const fs = require('fs');
@@ -117,24 +121,28 @@
         li.appendChild(itemText);
         ul.appendChild(li);
     });
-    fs.readFile("./info.csv", function(err, data) {
-        if (err) {
-            throw err;
-        }
-        parse(data, {columns: false, trim: true}, function(err, rows) {
-            for (let index = 1; index < rows.length; index++) {
-                const elements = rows[index];
-                var dataJson = JSON.stringify(elements);
-                var str = "<th scope='row'>" + index.toString()+ "</th>";
-                elements.forEach(element => {
-                    str += "<td>" +element+ "</td>";
-                });
-                str += `<td><button class='btn btn-primary btn-xs my-xs-btn' type='button' onClick='selectFunc(` + dataJson + `)' >` +
-                    "<span class='glyphicon glyphicon-pencil'></span> Upload </button></td>"
-                tableRef.insertRow().innerHTML = str;
+    function readAccInfo() {
+        fs.readFile("./info.csv", function(err, data) {
+            if (err) {
+                throw err;
             }
+            parse(data, {columns: false, trim: true}, function(err, rows) {
+                tableRef.innerHTML = '';
+                for (let index = 1; index < rows.length; index++) {
+                    const elements = rows[index];
+                    var dataJson = JSON.stringify(elements);
+                    var str = "<th scope='row'>" + index.toString()+ "</th>";
+                    elements.forEach(element => {
+                        str += "<td>" +element+ "</td>";
+                    });
+                    str += `<td><button class='btn btn-primary btn-xs my-xs-btn' type='button' onClick='selectFunc(` + dataJson + `)' >` +
+                        "<span class='glyphicon glyphicon-pencil'></span> Upload </button></td>"
+                    tableRef.insertRow().innerHTML = str;
+                }
+            });
         });
-    });
+    }
+    readAccInfo();
     fs.readFile("./product.csv", function(err, data) {
         if (err) {
             throw err;
@@ -194,6 +202,9 @@
                 }, 2000);
             })
         })
+    }
+    function importFunc() {
+        ipcRenderer.send('import-clicked','openImportWindow');
     }
 </script>
 </body>

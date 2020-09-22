@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "main.js",
+  "build": {
+    "appId": "so6-upload-tool"
+  },
   "scripts": {
     "start": "electron .",
     "dev": "nodemon --exec electron .",
@@ -17,9 +20,11 @@
     "electron-packager": "^15.1.0",
     "jquery": "^3.5.1",
     "mongoose": "^5.10.3",
+    "node-notifier": "^8.0.0",
     "nodemon": "^2.0.4",
     "public-ip": "^4.0.2",
-    "puppeteer": "^5.2.1"
+    "puppeteer": "^5.2.1",
+    "puppeteer-page-proxy": "^1.2.8"
   },
   "devDependencies": {
     "electron": "^10.1.1"

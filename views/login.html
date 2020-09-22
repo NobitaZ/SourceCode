@@ -86,6 +86,14 @@
 		display: inline-block;
 		margin: 100px auto;
 	}
+	.db-status {
+		margin: auto;
+		position: relative;
+		text-align: center;
+		margin-top: 100px;
+		/* margin-left: 300px;
+		margin-right: auto; */
+	}
 </style>
 </head>
 <body>
@@ -116,6 +124,7 @@
 		</div>
 	</div>
 </div>
+<div class="db-status">Connecting to DB...</div>
 <script>
 const electron = require('electron');
 	//window.jQuery = window.$ = require('jquery');
@@ -151,6 +160,15 @@ ipcRenderer.on('msg-login', function(e, item){
 		msgDiv.innerHTML = 'Incorrect Password';
 	} 
 });
+ipcRenderer.on('db', function(e, item){
+	const dbstatus = document.querySelector('.db-status');
+	if (item == 'connected') {
+		dbstatus.innerHTML = "DB Connected";
+	}
+	else {
+		dbstatus.append = "DB Error";
+	}
+})
 </script>
 </body>
 </html>

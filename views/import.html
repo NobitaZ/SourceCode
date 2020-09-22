@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="styles.css">
+    <!-- <script src="upload.js"></script> -->
+    <title>Society6 Import Account</title>
+    <style>
+        body {
+            font-family: 'Varela Round', sans-serif;
+        }
+        /*Style the text area */
+        .import-area {
+            margin-left: 20px;
+            width: 450px;
+            height: 260px;
+            border: 1px solid #ccc;
+        }
+        .btnImport {
+            margin-top: -300px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-md bg-dark navbar-dark">
+        <label class="navbar-brand">Society6 Import Account</label>
+    </nav>
+    <br>
+    <div id="container">
+        <textarea class="import-area"></textarea>
+        <button class='btn btn-primary btn-xs my-xs-btn btnImport' type='button' onclick='saveFunc()'><span class='glyphicon glyphicon-pencil'></span> Save </button>
+        <div id="msg-acc-import"></div>
+    </div>
+<script>
+    const electron = require('electron').remote;
+    const {dialog} = electron;
+    const {ipcRenderer} = require('electron');
+    const parse = require('csv-parse')
+    const path = require('path');
+    const fs = require('fs');
+
+    const fileName = document.getElementById('file-name');
+    var tagName = document.getElementById('tagname');
+    var arrImgs = {};
+    function uploadFunc() {
+        const regexStr = /([^\\]+$)/;
+        const imgs = dialog.showOpenDialogSync({
+            title: 'Image Upload',
+            properties:['openFile', 'multiSelections'],
+            filters: [{
+                name: 'Images',
+                extensions: ['jpg', 'png', 'rgb']
+            }]
+        })
+        arrImgs = imgs;
+        fileName.innerHTML = "";
+        imgs.forEach(imgPath => {
+            var imgName = imgPath.split(regexStr)
+            fileName.innerHTML += imgName[1] + "<br>";
+        });
+    }
+
+    function readTags() {
+        var tagNameVal = tagName.value.split(',');
+        var nicheVal = tagNameVal[0];
+        var subNicheVal = tagNameVal[1];
+        let nicheIndex = 0;
+        let nextNicheIndex = 0;
+        fs.readFile('./tags.csv', function(err, data) {
+            if (err) {
+                throw err;
+            }
+            parse(data, {columns: false, trim: true}, function(err, rows) {
+                //debugger;
+                if (err) {
+                    throw err;
+                }
+                for (let index = 1; index < rows.length; index++) {
+                    const element = rows[index];
+                    if (element[0].trim() == nicheVal) {
+                        nicheIndex = index;
+                        continue;
+                    }
+                    if (element[0] != '' && index > nicheIndex && nicheIndex != 0) {
+                        nextNicheIndex = index;
+                        break;
+                    }
+                }
+                //debugger;
+                for (let i = nicheIndex; i < nextNicheIndex; i++) {
+                    const element = rows[i];
+                    if (element[1].trim() == subNicheVal) {
+                        arrTags.push(element[2].trim());
+                        break;
+                    }
+                }
+            });
+        });
+    }
+
+    const btnProcess = document.getElementById("btnProcess");
+    btnProcess.addEventListener("click", function (e) {
+        e.preventDefault;
+        //readTags();
+        if (arrImgs == null || arrImgs == '' || JSON.stringify(arrImgs) == '{}') {
+            const errMsgBox = dialog.showErrorBox('No Images Selected !!!', '');
+        } else if (tagName.value == '') {
+            const errMsgBox = dialog.showErrorBox('No Tag Name !!!', '');
+        } else if (!tagName.value.includes(',')) {
+            const errMsgBox = dialog.showErrorBox('Wrong format Tag Name !!!', '');
+        } else {
+            const items = [arrImgs, tagName.value];
+            ipcRenderer.send('upload-clicked', items);
+        }
+    })
+</script>
+</body>
+</html>

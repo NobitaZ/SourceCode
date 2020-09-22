@@ -7,7 +7,9 @@ const Logs = require(path.join(__dirname, 'models/Logs'));
 const {app, BrowserWindow, Menu, ipcMain, remote, dialog} = require('electron');
 const config = require(path.join(__dirname, './config/keys'));
 const fs = require('fs');
-const parse = require('csv-parse')
+const parse = require('csv-parse');
+//const useProxy = require('puppeteer-page-proxy');
+const WindowsToaster = require('node-notifier').WindowsToaster;
 const myFunc = require(path.join(__dirname, './src/windowRenderer'));
 //const $ = jQuery = require('jquery');
 //var parse = require('csv-parse');
@@ -16,21 +18,12 @@ const myFunc = require(path.join(__dirname, './src/windowRenderer'));
 process.env.NODE_ENV = 'development';
 //process.env.NODE_ENV = 'production';
 
-let mainWindow, homeWindow, uploadWindow;
+let mainWindow, homeWindow, uploadWindow, importWindow;
 
 // Config
 const db = config.mongoURI;
 const csvFilePath = config.csvFilePath;
 //const ip_address = config.ip_address;
-
-// Connect to MongoDB
-mongoose
-  .connect(
-    db,
-    { useNewUrlParser: true ,useUnifiedTopology: true}
-  )
-  .then(() => console.log('MongoDB Connected'))
-  .catch(err => console.log(err));
 
 // Create login window
 function createWindow () {
@@ -96,7 +89,45 @@ function createUploadWindow(){
   Menu.setApplicationMenu(mainMenu);
 }
 
+// Create import acc window
+function createImportWindow(){
+  importWindow = new BrowserWindow({
+    width: 600,
+    height:400,
+    resizable: false,
+    darkTheme: true,
+    title:'Society Upload Tool',
+    webPreferences: {
+      nodeIntegration: true,
+      enableRemoteModule: true
+    }
+  });
+  importWindow.removeMenu();
+  importWindow.loadURL(path.join(__dirname, './views/import.html'));
+  importWindow.on('close', function(){
+    importWindow = null;
+  });
+  // const mainMenu = Menu.buildFromTemplate(myFunc.mainMenuTemplate(app));
+  // Menu.setApplicationMenu(mainMenu);
+}
+
 app.on('ready', createWindow)
+
+// Connect to MongoDB
+mongoose
+  .connect(
+    db,
+    { useNewUrlParser: true ,useUnifiedTopology: true}
+  )
+  .then(() => {
+    mainWindow.webContents.send('db','connected');
+    console.log('MongoDB Connected')
+  })
+  .catch(err => {
+    console.log(err);
+    mainWindow.webContents.send('db','failed');
+  });
+
 app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') {
     app.quit()
@@ -156,6 +187,10 @@ ipcMain.on('select-clicked', function (e, arrItems) {
   //console.log(arrAcc)
 })
 
+ipcMain.on('import-clicked', function (e, item) {
+  createImportWindow();
+})
+
 // Handle upload button click
 ipcMain.on('upload-clicked', function(e, arrItems) {
   //console.log('arrItems: ' + arrItems);
@@ -164,54 +199,57 @@ ipcMain.on('upload-clicked', function(e, arrItems) {
 })
 
 //Read file function
-function readTagsFile(arrItems,arrTags) {
-  return new Promise((resolve, reject) => {
-    var tagNameVal = arrItems[1].split(',');
-    var nicheVal = tagNameVal[0];
-    var subNicheVal = tagNameVal[1];
-    var nicheIndex = 0;
-    var nextNicheIndex = 0;
-    fs.readFile(path.join(__dirname, './tags.csv'), 'utf8', function (error, data) {
-      if (error) return reject(error);
-      parse(data, {columns: false, trim: true}, function(err, rows) {
-        //debugger;
-        if (err) {
-            throw err;
-        }
-        for (let index = 1; index < rows.length; index++) {
-            const element = rows[index];
-            if (element[0].trim() == nicheVal) {
-                nicheIndex = index;
-                continue;
-            }
-            if (element[0] != '' && index > nicheIndex && nicheIndex != 0) {
-                nextNicheIndex = index;
-                break;
-            }
-        }
-        //debugger;
-        for (let i = nicheIndex; i < nextNicheIndex; i++) {
-            const element = rows[i];
-            if (element[1].trim() == subNicheVal) {
-                arrTags.push(element[2].trim());
-                break;
-            }
-        }
-      });
-      resolve(arrTags);
-    })
-  });
-}
+// function readTagsFile(arrItems,arrTags) {
+//   return new Promise((resolve, reject) => {
+//     var tagNameVal = arrItems[1].split(',');
+//     var nicheVal = tagNameVal[0];
+//     var subNicheVal = tagNameVal[1];
+//     var nicheIndex = 0;
+//     var nextNicheIndex = 0;
+//     fs.readFile(path.join(__dirname, './tags.csv'), 'utf8', function (error, data) {
+//       if (error) return reject(error);
+//       parse(data, {columns: false, trim: true}, function(err, rows) {
+//         //debugger;
+//         if (err) {
+//             throw err;
+//         }
+//         for (let index = 1; index < rows.length; index++) {
+//             const element = rows[index];
+//             if (element[0].trim() == nicheVal) {
+//                 nicheIndex = index;
+//                 continue;
+//             }
+//             if (element[0] != '' && index > nicheIndex && nicheIndex != 0) {
+//                 nextNicheIndex = index;
+//                 break;
+//             }
+//         }
+//         //debugger;
+//         for (let i = nicheIndex; i < nextNicheIndex; i++) {
+//             const element = rows[i];
+//             if (element[1].trim() == subNicheVal) {
+//                 arrTags.push(element[2].trim());
+//                 break;
+//             }
+//         }
+//       });
+//       resolve(arrTags);
+//     })
+//   });
+// }
 //Main process function
 async function mainProcess(arrAcc, arrItems){
   const accUsername = arrAcc[0];
   const accPassword = arrAcc[1];
+  const proxyIP = arrAcc[2];
+  const proxyUser = arrAcc[3];
+  const proxyPass = arrAcc[4];
   const arrImgPath = arrItems[0];
   //var wallArtList = ['Framed Mini Art Print','Mini Art Print','Art Print'];
   const wallArtList = [];
 
   // Read product
-  fs.readFile(path.join(__dirname, './product.csv'), function(err, data) {
+  fs.readFile('./product.csv', function(err, data) {
     if (err) {
         throw err;
     }
@@ -233,7 +271,7 @@ async function mainProcess(arrAcc, arrItems){
   var nicheIndex = 0;
   var nextNicheIndex = 0;
   //const arrTagsName = await readTagsFile(arrItems, arrTags);
-  fs.readFile(path.join(__dirname, './tags.csv'), function(err, data) {
+  fs.readFile('./tags.csv', function(err, data) {
     if (err) {
         throw err;
     }
@@ -268,10 +306,17 @@ async function mainProcess(arrAcc, arrItems){
 
   setTimeout(() => {
     tagListArr = arrTags[0].split(' ');
-    console.log(tagListArr);
+    //console.log(tagListArr);
   }, 10000);
   
-  const {browser, page} =  await openBrowser();
+  const {browser, page} =  await openBrowser(proxyIP);
+  // const proxy = `http://${proxyUser}:${proxyPass}@${proxyIP}:4444`;
+  // console.log(proxy);
+  // await useProxy(page, proxy);
+  // const data = await useProxy.lookup(page);
+  // console.log(data.ip);
+  await page.authenticate({'username':proxyUser, 'password': proxyPass});
+
   await page.setViewport({width: 1500, height: 900})
   await page.setDefaultNavigationTimeout(0);
 
@@ -304,11 +349,19 @@ async function mainProcess(arrAcc, arrItems){
       //Get filename
       const regexStr = /([^\\]+)(?=\.\w+$)/;
       let imgPath = arrImgPath[index];
+      let imgName = imgPath.replace(/^.*[\\\/]/,'');
+      let imgDirname = path.dirname(imgPath);
+      console.log('imgDirname: ' + imgDirname)
+      console.log('imgPath: ' + imgPath)
       let artTitle = imgPath.match(regexStr)[0].replace(/[^a-zA-Z ]/g,'').trim();
       let img = [];
       img.push(imgPath);
-      tagListArr.splice(0,0,artTitle);
-      console.log(tagListArr);
+      console.log('img ' + img)
+      let artTitleSplit = artTitle.split(' ');
+      artTitleSplit.forEach(element => {
+        tagListArr.splice(0,0,element);
+      });
+      
       // Upload img
       await page.goto(`https://society6.com/artist-studio`);
       await myFunc.timeOutFunc(3000);
@@ -321,7 +374,6 @@ async function mainProcess(arrAcc, arrItems){
       ]).catch((error) => {console.log(error)});
 
       await fileChooser.accept(img);
-      await homeWindow.webContents.send('logs',`Upload img ${artTitle} success`);
       // Wait for button continue to enable
       await page.waitForFunction(() => {
         let arrClassname = document.querySelector(`[qa-id="continue"]`).className.split(' ');
@@ -333,7 +385,7 @@ async function mainProcess(arrAcc, arrItems){
         });
         return result;
       }, {timeout: 0});
-
+      await homeWindow.webContents.send('logs',`Upload Successed: ${imgName}`);
       // Copyright 
       await myFunc.timeOutFunc(500);
       await page.click('[qa-id="continue"]');
@@ -396,7 +448,9 @@ async function mainProcess(arrAcc, arrItems){
             for (let index = 0; index < arrResult.length; index++) {
               if (arrResult[index] !== 'undefined') {
                 if (arrResult[index].children[1].className.includes('enableSwitch')) {
-                  arrResult[index].children[1].click();
+                  setTimeout(() => {
+                    arrResult[index].children[1].click();  
+                  }, 1000);
                 }
               }
             }
@@ -426,15 +480,16 @@ async function mainProcess(arrAcc, arrItems){
           invalidTag.children[1].click();
         }
         return result;
-      })
+      });
 
       // Save and Publish
       await page.click('[qa-id="save"]');
       await myFunc.timeOutFunc(2000);
       await page.click('[name="newsletterSignup"]');
-      await myFunc.timeOutFunc(100);
+      await myFunc.timeOutFunc(700);
       //await page.click('[class^="button_publishStatus"]');
       await page.click('button[class^="button_publishStatus"]');
+      await myFunc.timeOutFunc(500);
       await page.waitForFunction(() => {
         let selector = document.querySelectorAll('span[class^="status"]');
         var result = false;
@@ -443,18 +498,47 @@ async function mainProcess(arrAcc, arrItems){
         }
         return result;
       }, {timeout: 0});
+      await homeWindow.webContents.send('logs','Product published')
+      let newPath = path.join(imgDirname,'./done');
+      if (!fs.existsSync(newPath)){
+        fs.mkdirSync(newPath);
+        await homeWindow.webContents.send('logs',`Folder done created`);
+      }
+      fs.rename(imgPath,path.join(newPath,'./'+imgName), (err) => {
+        if (err) throw err
+        //console.log('Successfully renamed - AKA moved!')
+        homeWindow.webContents.send('logs',`Move ${imgName} to done folder`);
+      });
     }
   }
+  //Notification
+  const notifier = new WindowsToaster({
+    withFallback: false
+  })
+  notifier.notify(
+		{
+		appName: "so6-upload-tool",
+		title: "Society6 Upload Tool",
+    message: "Upload Completed!",
+    //icon: 'https://society6.com/build/images/favicon-96x96.png',
+      sound: true
+		},
+		function(err, response) {
+		// Response is response from notification
+		  console.log("responded...");
+		}
+	);
   await closeBrowser(browser).catch((error) => {console.log(error)});
 }
 
 // Open browser
-async function openBrowser() {
+async function openBrowser(ip) {
   const browser = await puppeteer.launch({
     executablePath:`${process.cwd()}\\chrome\\chrome.exe`, 
     headless: false,
     ignoreHTTPSErrors: true,
-    args: [`--window-size=1500,900`]
+    args: [`--proxy-server=http://${ip}:4444`]
+    //--window-size=1500,900  --disable-web-security
   });
   console.log('Browser opened');
   await homeWindow.webContents.send('logs','Browser openned');
@@ -466,6 +550,7 @@ async function openBrowser() {
 // Close browser
 async function closeBrowser(browser) {
   await browser.close();
-  //await mainWindow.webContents.send('log','Browser closed!');
+  await homeWindow.webContents.send('log','Browser closed');
+  await homeWindow.webContents.send('log','Upload Completed !!!');
   console.log(`Browser closed!`);
 }
