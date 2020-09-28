@@ -188,9 +188,7 @@ ipcRenderer.on('db', function(e, item){
 
 ipcRenderer.on('appUpdate', function(event, text) {
   var container = document.querySelector('.msg-update');
-  var message = document.createElement('div');
-  message.innerHTML = text;
-  container.innerHTML = message;
+  container.innerHTML = text;
 })
 </script>
 </body>
