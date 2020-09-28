@@ -157,7 +157,9 @@ function connectDB(db) {
 ///////////////////////////////////// On ready
 app.on('ready', createWindow)
 app.on('ready', function()  {
-  autoUpdater.checkForUpdatesAndNotify();
+  setTimeout(() => {
+    autoUpdater.checkForUpdatesAndNotify();
+  }, 1000);
 });
 
 // Connect to MongoDB
