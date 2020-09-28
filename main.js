@@ -8,20 +8,18 @@ const {app, BrowserWindow, Menu, ipcMain, remote, dialog} = require('electron');
 const config = require(path.join(__dirname, './config/keys'));
 const fs = require('fs');
 const parse = require('csv-parse');
-//const useProxy = require('puppeteer-page-proxy');
 const WindowsToaster = require('node-notifier').WindowsToaster;
 const myFunc = require(path.join(__dirname, './src/windowRenderer'));
 //const $ = jQuery = require('jquery');
-//var parse = require('csv-parse');
 
 //Enviroment
 process.env.NODE_ENV = 'development';
-//process.env.NODE_ENV = 'production';
+// process.env.NODE_ENV = 'production';
 
 let mainWindow, homeWindow, uploadWindow, importWindow;
 
-// Config
-const db = config.mongoURI;
+const db = process.env.NODE_ENV !== 'development' ? config.mongoURI : config.localURI;
+
 const csvFilePath = config.csvFilePath;
 //const ip_address = config.ip_address;
 
@@ -35,12 +33,11 @@ function createWindow () {
       nodeIntegration: true,
       enableRemoteModule: true
     }
-  })
-
+  });
   mainWindow.loadURL(path.join(__dirname, './views/login.html'));
   mainWindow.on('closed', function () {
   mainWindow = null
-  })
+  });
   const mainMenu = Menu.buildFromTemplate(myFunc.mainMenuTemplate(app));
   Menu.setApplicationMenu(mainMenu);
 };
@@ -111,10 +108,8 @@ function createImportWindow(){
   // Menu.setApplicationMenu(mainMenu);
 }
 
-app.on('ready', createWindow)
-
-// Connect to MongoDB
-mongoose
+function connectDB(db) {
+  mongoose
   .connect(
     db,
     { useNewUrlParser: true ,useUnifiedTopology: true}
@@ -127,6 +122,18 @@ mongoose
     console.log(err);
     mainWindow.webContents.send('db','failed');
   });
+}
+
+app.on('ready', createWindow)
+
+// Connect to MongoDB
+if (process.env.NODE_ENV !== 'development') {
+  connectDB(db);
+} else {
+  setTimeout(() => {
+    connectDB(db);
+  }, 1000);
+}
 
 app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') {
@@ -315,13 +322,7 @@ async function mainProcess(arrAcc, arrItems){
   }, 10000);
   
   const {browser, page} =  await openBrowser(proxyIP);
-  // const proxy = `http://${proxyUser}:${proxyPass}@${proxyIP}:4444`;
-  // console.log(proxy);
-  // await useProxy(page, proxy);
-  // const data = await useProxy.lookup(page);
-  // console.log(data.ip);
   await page.authenticate({'username':proxyUser, 'password': proxyPass});
-
   await page.setViewport({width: 1500, height: 900})
   await page.setDefaultNavigationTimeout(0);
 
@@ -341,11 +342,14 @@ async function mainProcess(arrAcc, arrItems){
   // });
   // await page.waitForNavigation({waitUntil: 'networkidle2'});
 
-  await Promise.all([
-    page.keyboard.press('Enter'),
-    page.waitForNavigation({ waitUntil: 'networkidle0' }),
-  ]).catch((error) => {console.log(error)});
+  // await Promise.all([
+  //   page.keyboard.press('Enter'),
+  //   page.waitForNavigation({ waitUntil: 'networkidle0' }),
+  // ]).catch((error) => {console.log(error)});
 
+  await page.keyboard.press('Enter');
+  await page.waitForSelector('#nav-user-sell');
+  await myFunc.timeOutFunc(1000);
   await homeWindow.webContents.send('logs','Login success');
   await homeWindow.webContents.send('logs',`Acc: ${accUsername}`);
   //Process
@@ -369,7 +373,7 @@ async function mainProcess(arrAcc, arrItems){
       
       // Upload img
       await page.goto(`https://society6.com/artist-studio`);
-      await myFunc.timeOutFunc(3000);
+      await myFunc.timeOutFunc(2000);
       await page.click('[qa-id="new_artwork_button"]');
       await page.type('[qa-id="artworkTitle"]',artTitle);
       await myFunc.timeOutFunc(1000);
@@ -419,9 +423,19 @@ async function mainProcess(arrAcc, arrItems){
         })
         return idSelect;
       });
+      await page.click('#' + selectionID);
+
+      //check Category
+      await page.waitForFunction(() => {
+        var categoryDropdownId = document.querySelector('[qa-id="categoryDropdown"]');
+        var result = false;
+        if (categoryDropdownId.innerText != 'Select...') {
+          result = true;
+        }
+        return result;
+      });
 
       // Fill Tags
-      await page.click('#' + selectionID);
       for (let index = 0; index < tagListArr.length; index++) {
         const element = tagListArr[index];
         await page.type('#search-creatives', element);
@@ -525,7 +539,6 @@ async function mainProcess(arrAcc, arrItems){
 		appName: "so6-upload-tool",
 		title: "Society6 Upload Tool",
     message: "Upload Completed!",
-    //icon: 'https://society6.com/build/images/favicon-96x96.png',
       sound: true
 		},
 		function(err, response) {
@@ -540,6 +553,7 @@ async function mainProcess(arrAcc, arrItems){
 async function openBrowser(ip) {
   const browser = await puppeteer.launch({
     executablePath:`${process.cwd()}\\chrome\\chrome.exe`, 
+    //executablePath: puppeteer.executablePath(),
     headless: false,
     ignoreHTTPSErrors: true,
     args: [`--proxy-server=http://${ip}:4444`]
@@ -555,7 +569,7 @@ async function openBrowser(ip) {
 // Close browser
 async function closeBrowser(browser) {
   await browser.close();
-  await homeWindow.webContents.send('log','Browser closed');
-  await homeWindow.webContents.send('log','Upload Completed !!!');
+  await homeWindow.webContents.send('logs','Browser closed');
+  await homeWindow.webContents.send('logs','Upload Completed !!!');
   console.log(`Browser closed!`);
 }

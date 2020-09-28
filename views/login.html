@@ -15,7 +15,11 @@
     body {
 		font-family: 'Varela Round', sans-serif;
 	}
+	#myModal {
+		margin-top: -30px;
+	}
 	.modal-login {
+		
 		color: #636363;
 		width: 400px;
 		margin: 50px auto;
@@ -90,7 +94,7 @@
 		margin: auto;
 		position: relative;
 		text-align: center;
-		margin-top: 100px;
+		margin-top: -10px;
 		/* margin-left: 300px;
 		margin-right: auto; */
 	}
@@ -143,20 +147,21 @@ function submitForm(e){
     ipcRenderer.send('auth-form', items);
 }
 const msgDiv = document.querySelector('#msg-cus');
+msgDiv.innerHTML = '\n'
 ipcRenderer.on('msg-login', function(e, item){
 	if (item == 'user-failed') {
 		msgDiv.className = '';
 		username.value = '';
 		password.value = '';
 		msgDiv.className += 'alert alert-danger alert-dismissible show';
-		const itemText = document.createTextNode(item);
+		// const itemText = document.createTextNode(item);
 		msgDiv.innerHTML = 'Incorrect Username';
 	} else if (item == 'pass-failed') {
 		msgDiv.className = '';
 		username.value = '';
 		password.value = '';
 		msgDiv.className += 'alert alert-danger alert-dismissible show';
-		const itemText = document.createTextNode(item);
+		// const itemText = document.createTextNode(item);
 		msgDiv.innerHTML = 'Incorrect Password';
 	} 
 });
