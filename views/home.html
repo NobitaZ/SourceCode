@@ -52,6 +52,11 @@
         .btnSave {
             margin-top: -300px;
         }
+        .sticky {
+            position: fixed;
+            top: 0;
+            width: 100%;
+        }
     </style>
 </head>
 <body>
@@ -61,7 +66,7 @@
     </nav>
     <br>
     <!-- Tab links -->
-    <div class="tab">
+    <div class="tab" id="tab">
         <button class="tablinks active" onclick="openTab(event, 'account')">Accounts</button>
         <button class="tablinks" onclick="openTab(event, 'product')">Products</button>
         <button class="tablinks" onclick="openTab(event, 'logs')">Logs</button>
@@ -208,6 +213,16 @@
     }
     function importFunc() {
         ipcRenderer.send('import-clicked','openImportWindow');
+    }
+    window.onscroll = function() {stickyHeader()};
+    var navbar = document.getElementById("tab");
+    var sticky = navbar.offsetTop;
+    function stickyHeader() {
+        if (window.pageYOffset >= sticky) {
+            navbar.classList.add("sticky")
+        } else {
+            navbar.classList.remove("sticky");
+        }
     }
 </script>
 </body>
