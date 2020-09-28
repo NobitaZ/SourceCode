@@ -1,15 +1,26 @@
 {
-  "name": "society6",
+  "name": "society6-upload-tool",
   "version": "1.0.0",
   "description": "",
   "main": "main.js",
   "build": {
-    "appId": "so6-upload-tool"
+    "appId": "so6-upload-tool",
+    "win": {
+      "target": "nsis",
+      "icon": "icon.png"
+    },
+    "extraResources": [
+      {
+        "from": "data",
+        "to": "data"
+      }
+    ]
   },
   "scripts": {
     "start": "electron .",
     "dev": "nodemon --exec electron .",
-    "package-win": "electron-packager . --overwrite --platform=win32 --asar --arch=ia32 --prune=true --out=release-builds --version-string.CompanyName=CE --version-string.FileDescription=QuyDoan --version-string.ProductName=\"Society6 Project\""
+    "package-win": "electron-packager . --overwrite --platform=win32 --asar --arch=ia32 --prune=true --out=release-builds --version-string.CompanyName=CE --version-string.FileDescription=QuyDoan --version-string.ProductName=\"Society6 Project\"",
+    "dist": "electron-builder --windows"
   },
   "author": "Quy Doan",
   "license": "ISC",
@@ -26,6 +37,7 @@
     "puppeteer": "^5.2.1"
   },
   "devDependencies": {
-    "electron": "^10.1.1"
+    "electron": "^10.1.1",
+    "electron-builder": "^22.8.1"
   }
 }

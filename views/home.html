@@ -130,7 +130,11 @@
         readAccInfo();
     })
     function readAccInfo() {
-        fs.readFile("./info.csv", function(err, data) {
+        const infoPath =
+        process.env.NODE_ENV === 'development'
+            ? './data/info.csv'
+            : path.join(process.resourcesPath, 'data/info.csv');
+        fs.readFile(infoPath, function(err, data) {
             if (err) {
                 throw err;
             }
@@ -151,7 +155,11 @@
         });
     }
     readAccInfo();
-    fs.readFile("./product.csv", function(err, data) {
+    const productPath =
+        process.env.NODE_ENV === 'development'
+            ? './data/product.csv'
+            : path.join(process.resourcesPath, 'data/product.csv');
+    fs.readFile(productPath, function(err, data) {
         if (err) {
             throw err;
         }
@@ -194,11 +202,17 @@
         let columns = {
             product: 'Product'
         };
-        let textSplit = productArea.value.split('\n');
-        let data = []
+        let textSplit = productArea.value.split('\n').filter((v)=>{
+            return v != "";
+        });
+        let data = [];
         data.push(textSplit);
         stringify(data, function(err, output){
-            fs.writeFile("./product.csv", output, function(err) {
+            const product2Path =
+            process.env.NODE_ENV === 'development'
+                ? './data/product.csv'
+                : path.join(process.resourcesPath, 'data/product.csv');
+            fs.writeFile(product2Path, output, function(err) {
                 if (err) {
                     throw err;
                 }

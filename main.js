@@ -10,7 +10,6 @@ const fs = require('fs');
 const parse = require('csv-parse');
 const WindowsToaster = require('node-notifier').WindowsToaster;
 const myFunc = require(path.join(__dirname, './src/windowRenderer'));
-//const $ = jQuery = require('jquery');
 
 //Enviroment
 process.env.NODE_ENV = 'development';
@@ -104,8 +103,6 @@ function createImportWindow(){
   importWindow.on('close', function(){
     importWindow = null;
   });
-  // const mainMenu = Menu.buildFromTemplate(myFunc.mainMenuTemplate(app));
-  // Menu.setApplicationMenu(mainMenu);
 }
 
 function connectDB(db) {
@@ -164,7 +161,6 @@ ipcMain.on('auth-form',function(e, item) {
       if (isMatch) {
         createHomeWindow();
         mainWindow.close();
-        //mainProcess();
         // const publicIp = require('public-ip');
         // const ip_adds = (async () => {
         //     const ip =  await publicIp.v4();
@@ -187,11 +183,8 @@ ipcMain.on('auth-form',function(e, item) {
 var arrAcc = {}
 // Handle select button click
 ipcMain.on('select-clicked', function (e, arrItems) {
-  //homeWindow.loadURL(path.join(__dirname, './views/upload.html'));
   createUploadWindow();
   arrAcc = arrItems;
-//console.log(app.getAppPath())
-  //console.log(arrAcc)
 })
 
 ipcMain.on('import-clicked', function (e, item) {
@@ -205,7 +198,7 @@ ipcMain.on('import-success', function(e, item) {
 
 // Handle upload button click
 ipcMain.on('upload-clicked', function(e, arrItems) {
-  console.log('arrItems: ' + arrItems);
+  //console.log('arrItems: ' + arrItems);
   mainProcess(arrAcc,arrItems);
   uploadWindow.close();
 })
@@ -257,11 +250,14 @@ async function mainProcess(arrAcc, arrItems){
   const proxyUser = arrAcc[3];
   const proxyPass = arrAcc[4];
   const arrImgPath = arrItems[0]
-  //var wallArtList = ['Framed Mini Art Print','Mini Art Print','Art Print'];
   const wallArtList = [];
 
   // Read product
-  fs.readFile('./product.csv', function(err, data) {
+  const productPath =
+  process.env.NODE_ENV === 'development'
+    ? './data/product.csv'
+    : path.join(process.resourcesPath, 'data/product.csv');
+  fs.readFile(productPath, function(err, data) {
     if (err) {
         throw err;
     }
@@ -282,8 +278,11 @@ async function mainProcess(arrAcc, arrItems){
   var subNicheVal = tagNameVal[1];
   var nicheIndex = 0;
   var nextNicheIndex = 0;
-  //const arrTagsName = await readTagsFile(arrItems, arrTags);
-  fs.readFile('./tags.csv', function(err, data) {
+  const tagsPath =
+  process.env.NODE_ENV === 'development'
+    ? './data/tags.csv'
+    : path.join(process.resourcesPath, 'data/tags.csv');
+  fs.readFile(tagsPath, function(err, data) {
     if (err) {
         throw err;
     }
@@ -313,12 +312,9 @@ async function mainProcess(arrAcc, arrItems){
         }
     });
   });
-  // var tagListStr = 'Bleach,Manga,Anime,Cartoon,Kid,Room,Hero,Epic,Japan,Japanese,Otaku,Movie,Book,Character,Luffy,game of throne';
-  // const tagListArr = tagListStr.split(',');
 
   setTimeout(() => {
     tagListArr = arrTags[0].split(' ');
-    //console.log(tagListArr);
   }, 10000);
   
   const {browser, page} =  await openBrowser(proxyIP);
@@ -349,6 +345,7 @@ async function mainProcess(arrAcc, arrItems){
 
   await page.keyboard.press('Enter');
   await page.waitForSelector('#nav-user-sell');
+  console.log('test')
   await myFunc.timeOutFunc(1000);
   await homeWindow.webContents.send('logs','Login success');
   await homeWindow.webContents.send('logs',`Acc: ${accUsername}`);
@@ -360,12 +357,9 @@ async function mainProcess(arrAcc, arrItems){
       let imgPath = arrImgPath[index];
       let imgName = imgPath.replace(/^.*[\\\/]/,'');
       let imgDirname = path.dirname(imgPath);
-      // console.log('imgDirname: ' + imgDirname)
-      // console.log('imgPath: ' + imgPath)
       let artTitle = imgPath.match(regexStr)[0].replace(/[^a-zA-Z ]/g,'').trim();
       let img = [];
       img.push(imgPath);
-      // console.log('img ' + img)
       let artTitleSplit = artTitle.split(' ');
       artTitleSplit.forEach(element => {
         tagListArr.splice(0,0,element);
@@ -374,6 +368,15 @@ async function mainProcess(arrAcc, arrItems){
       // Upload img
       await page.goto(`https://society6.com/artist-studio`);
       await myFunc.timeOutFunc(2000);
+      await page.waitForFunction(() => {
+        let modal = document.querySelector('#modal').children[0];
+        if (typeof(modal) == 'undefined') {
+          return true;
+        }
+        modal.children[0].children[0].click();
+        return true;
+      });
+      await myFunc.timeOutFunc(500);
       await page.click('[qa-id="new_artwork_button"]');
       await page.type('[qa-id="artworkTitle"]',artTitle);
       await myFunc.timeOutFunc(1000);
@@ -407,10 +410,10 @@ async function mainProcess(arrAcc, arrItems){
         page.click('[qa-id="continue"]'),
         page.waitForNavigation({ waitUntil: 'networkidle2' }),
       ]).catch((error) => {console.log(error)});
-      await page.waitFor(5000);
+      await myFunc.timeOutFunc(5000);
       await page.click('[qa-id="categoryDropdown"]');
       
-      //find dropdown selection
+      // //find dropdown selection
       
       //choose Category
       const selectionID = await page.evaluate(() => {
@@ -426,14 +429,18 @@ async function mainProcess(arrAcc, arrItems){
       await page.click('#' + selectionID);
 
       //check Category
-      await page.waitForFunction(() => {
-        var categoryDropdownId = document.querySelector('[qa-id="categoryDropdown"]');
-        var result = false;
-        if (categoryDropdownId.innerText != 'Select...') {
-          result = true;
-        }
-        return result;
-      });
+      // await page.waitForFunction(() => {
+      //   var categoryDropdownId = document.querySelector('[qa-id="categoryDropdown"]');
+      //   var result = false;
+      //   if (categoryDropdownId.innerText == 'painting' ||
+      //     categoryDropdownId.innerText == 'drawing' ||
+      //     categoryDropdownId.innerText == 'collage' ||
+      //     categoryDropdownId.innerText == 'photography' ||
+      //     categoryDropdownId.innerText == 'graphic design') {
+      //     result = true;
+      //   }
+      //   return result;
+      // });
 
       // Fill Tags
       for (let index = 0; index < tagListArr.length; index++) {
@@ -506,7 +513,6 @@ async function mainProcess(arrAcc, arrItems){
       await myFunc.timeOutFunc(2000);
       await page.click('[name="newsletterSignup"]');
       await myFunc.timeOutFunc(700);
-      //await page.click('[class^="button_publishStatus"]');
       await page.click('button[class^="button_publishStatus"]');
       await myFunc.timeOutFunc(500);
       await page.waitForFunction(() => {
@@ -525,7 +531,6 @@ async function mainProcess(arrAcc, arrItems){
       }
       fs.rename(imgPath,path.join(newPath,'./'+imgName), (err) => {
         if (err) throw err
-        //console.log('Successfully renamed - AKA moved!')
         homeWindow.webContents.send('logs',`Move ${imgName} to done folder`);
       });
     }
@@ -550,14 +555,23 @@ async function mainProcess(arrAcc, arrItems){
 }
 
 // Open browser
-async function openBrowser(ip) {
+async function openBrowser(proxy) {
+  ip = proxy.split(':')[0];
+  var port = '';
+  typeof(proxy.split(':')[1]) == 'undefined' ? port = '4444' : port = proxy.split(':')[1];
+
+  const chromePath =
+  process.env.NODE_ENV === 'development'
+    ? puppeteer.executablePath()
+    : path.join(process.resourcesPath, 'app.asar.unpacked/node_modules/puppeteer/.local-chromium/win64-782078/chrome-win/chrome.exe');
   const browser = await puppeteer.launch({
-    executablePath:`${process.cwd()}\\chrome\\chrome.exe`, 
+    // executablePath:`${process.cwd()}\\chrome\\chrome.exe`, 
     //executablePath: puppeteer.executablePath(),
+    executablePath: chromePath,
     headless: false,
     ignoreHTTPSErrors: true,
-    args: [`--proxy-server=http://${ip}:4444`]
-    //--window-size=1500,900  --disable-web-security
+    args: [`--proxy-server=http://${ip}:${port}`,'--window-size=1500,900']
+    //--disable-web-security
   });
   console.log('Browser opened');
   await homeWindow.webContents.send('logs','Browser openned');
