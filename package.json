@@ -1,11 +1,14 @@
 {
   "name": "society6-upload-tool",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "main.js",
   "build": {
     "appId": "so6-upload-tool",
     "win": {
+      "publish": [
+        "github"
+      ],
       "target": "nsis",
       "icon": "icon.png"
     },
@@ -14,13 +17,21 @@
         "from": "data",
         "to": "data"
       }
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "nobitaz",
+        "repo": "SourceCode"
+      }
     ]
   },
   "scripts": {
     "start": "electron .",
     "dev": "nodemon --exec electron .",
     "package-win": "electron-packager . --overwrite --platform=win32 --asar --arch=ia32 --prune=true --out=release-builds --version-string.CompanyName=CE --version-string.FileDescription=QuyDoan --version-string.ProductName=\"Society6 Project\"",
-    "dist": "electron-builder --windows"
+    "dist": "electron-builder --windows",
+    "publish": "electron-builder --windows --publish always"
   },
   "author": "Quy Doan",
   "license": "ISC",
@@ -29,6 +40,7 @@
     "csv-parse": "^4.12.0",
     "csv-stringify": "^5.5.1",
     "electron-packager": "^15.1.0",
+    "electron-updater": "^4.3.5",
     "jquery": "^3.5.1",
     "mongoose": "^5.10.3",
     "node-notifier": "^8.0.0",

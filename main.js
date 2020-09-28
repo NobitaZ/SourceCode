@@ -10,10 +10,11 @@ const fs = require('fs');
 const parse = require('csv-parse');
 const WindowsToaster = require('node-notifier').WindowsToaster;
 const myFunc = require(path.join(__dirname, './src/windowRenderer'));
+const {autoUpdater} = require("electron-updater");
 
 //Enviroment
-process.env.NODE_ENV = 'development';
-// process.env.NODE_ENV = 'production';
+// process.env.NODE_ENV = 'development';
+process.env.NODE_ENV = 'production';
 
 let mainWindow, homeWindow, uploadWindow, importWindow;
 
@@ -21,6 +22,37 @@ const db = process.env.NODE_ENV !== 'development' ? config.mongoURI : config.loc
 
 const csvFilePath = config.csvFilePath;
 //const ip_address = config.ip_address;
+
+//Send update status
+function sendStatusToWindow(text) {
+  //log.info(text);
+  mainWindow.webContents.send('appUpdate', text);
+}
+
+//----------------------------------
+// AUTO UPDATE
+//----------------------------------
+autoUpdater.on('checking-for-update', () => {
+  sendStatusToWindow('Checking for update...');
+})
+autoUpdater.on('update-available', (info) => {
+  sendStatusToWindow('Update available.');
+})
+autoUpdater.on('update-not-available', (info) => {
+  sendStatusToWindow('Update not available.');
+})
+autoUpdater.on('error', (err) => {
+  sendStatusToWindow('Error in auto-updater. ' + err);
+})
+autoUpdater.on('download-progress', (progressObj) => {
+  let log_message = "Download speed: " + progressObj.bytesPerSecond;
+  log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
+  log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
+  sendStatusToWindow(log_message);
+})
+autoUpdater.on('update-downloaded', (info) => {
+  sendStatusToWindow('Update downloaded');
+});
 
 // Create login window
 function createWindow () {
@@ -33,7 +65,7 @@ function createWindow () {
       enableRemoteModule: true
     }
   });
-  mainWindow.loadURL(path.join(__dirname, './views/login.html'));
+  mainWindow.loadURL(path.join(__dirname, `./views/login.html#v${app.getVersion()}`));
   mainWindow.on('closed', function () {
   mainWindow = null
   });
@@ -121,7 +153,12 @@ function connectDB(db) {
   });
 }
 
+
+///////////////////////////////////// On ready
 app.on('ready', createWindow)
+app.on('ready', function()  {
+  autoUpdater.checkForUpdatesAndNotify();
+});
 
 // Connect to MongoDB
 if (process.env.NODE_ENV !== 'development') {

@@ -98,12 +98,18 @@
 		/* margin-left: 300px;
 		margin-right: auto; */
 	}
+	.version {
+		text-align: right;
+		font-size: x-small;
+	}
 </style>
 </head>
 <body>
     <!-- Modal HTML -->
 <div id="myModal">
 	<div class="modal-login">
+		<div class="version" id="version">vX.Y.Z</div>
+		<div id="msg-update"></div>
 		<div class="">
 			<div class="modal-header">				
 				<h4 class="modal-title">Login</h4>
@@ -133,8 +139,11 @@
 const electron = require('electron');
 	//window.jQuery = window.$ = require('jquery');
 const {ipcRenderer} = electron;
+const app =electron.remote;
 const username = document.querySelector('#username');
 const password = document.querySelector('#password');
+let version = window.location.hash.substring(1);
+document.getElementById('version').innerText = version;
 document.querySelector('form').addEventListener('submit', submitForm);
 function submitForm(e){
     e.preventDefault();
@@ -166,13 +175,22 @@ ipcRenderer.on('msg-login', function(e, item){
 	} 
 });
 ipcRenderer.on('db', function(e, item){
+	const version = document.querySelector('.version');
 	const dbstatus = document.querySelector('.db-status');
+	//version.innerHTML = app.getVersion();
 	if (item == 'connected') {
 		dbstatus.innerHTML = "DB Connected";
 	}
 	else {
 		dbstatus.append = "DB Error";
 	}
+})
+
+ipcRenderer.on('appUpdate', function(event, text) {
+  var container = document.getElementById('msg-update');
+  var message = document.createElement('div');
+  message.innerHTML = text;
+  container.appendChild(message);
 })
 </script>
 </body>
