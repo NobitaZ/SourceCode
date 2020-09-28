@@ -109,7 +109,7 @@
 <div id="myModal">
 	<div class="modal-login">
 		<div class="version" id="version">vX.Y.Z</div>
-		<div id="msg-update"></div>
+		<div id="msg-update" class="msg-update"></div>
 		<div class="">
 			<div class="modal-header">				
 				<h4 class="modal-title">Login</h4>
@@ -187,8 +187,8 @@ ipcRenderer.on('db', function(e, item){
 })
 
 ipcRenderer.on('appUpdate', function(event, text) {
-  var container = document.getElementById('msg-update');
-  container.innerHTML(text);
+  var container = document.querySelector('.msg-update');
+  container.innerHTML = text;
 })
 </script>
 </body>
