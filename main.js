@@ -16,7 +16,7 @@ const {autoUpdater} = require("electron-updater");
 // process.env.NODE_ENV = 'development';
 process.env.NODE_ENV = 'production';
 
-let mainWindow, homeWindow, uploadWindow, importWindow;
+let mainWindow, homeWindow, uploadWindow, importWindow, updateWindow;
 
 const db = process.env.NODE_ENV !== 'development' ? config.mongoURI : config.localURI;
 
@@ -32,30 +32,59 @@ function sendStatusToWindow(text) {
 //----------------------------------
 // AUTO UPDATE
 //----------------------------------
+// autoUpdater.on('checking-for-update', () => {
+//   sendStatusToWindow('Checking for update...');
+// })
+// autoUpdater.on('update-available', (info) => {
+//   sendStatusToWindow('Update available.');
+// })
+// autoUpdater.on('update-not-available', (info) => {
+//   sendStatusToWindow('Update not available.');
+// })
+// autoUpdater.on('error', (err) => {
+//   sendStatusToWindow('Error in auto-updater. ' + err);
+// })
+// autoUpdater.on('download-progress', (progressObj) => {
+//   // let log_message = "Download speed: " + progressObj.bytesPerSecond;
+//   // log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
+//   // log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
+//   log_message = `Downloading... ${progressObj.percent}%`;
+//   sendStatusToWindow('Downloading...');
+// })
+// autoUpdater.on('update-downloaded', (info) => {
+//   sendStatusToWindow('Update downloaded');
+//   autoUpdater.quitAndInstall();
+// });
+
+//----------------------------------
+// AUTO UPDATE
+//----------------------------------
 autoUpdater.on('checking-for-update', () => {
-  sendStatusToWindow('Checking for update...');
+  updateWindow.webContents.send('msg-update', 'Checking for update...');
 })
 autoUpdater.on('update-available', (info) => {
-  sendStatusToWindow('Update available.');
+  updateWindow.webContents.send('msg-update', 'Update available');
 })
 autoUpdater.on('update-not-available', (info) => {
-  sendStatusToWindow('Update not available.');
+  updateWindow.webContents.send('msg-update', "You are using the latest version");
+  setTimeout(() => {
+    createWindow();
+    updateWindow.close();  
+  }, 1000);
 })
 autoUpdater.on('error', (err) => {
-  sendStatusToWindow('Error in auto-updater. ' + err);
+  updateWindow.webContents.send('msg-update', 'Error in auto-updater. ' + err);
 })
 autoUpdater.on('download-progress', (progressObj) => {
-  // let log_message = "Download speed: " + progressObj.bytesPerSecond;
-  // log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
-  // log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
-  log_message = `Downloading... ${progressObj.percent}%`;
-  sendStatusToWindow(log_message);
+  updateWindow.webContents.send('msg-update', 'Downloading...');
+  updateWindow.webContents.send('download-progress', Math.round(progressObj.percent));
 })
 autoUpdater.on('update-downloaded', (info) => {
-  sendStatusToWindow('Update downloaded');
-  autoUpdater.quitAndInstall();
+  updateWindow.webContents.send('msg-update', 'Update downloaded...Install in 3s');
+  setTimeout(() => {
+    autoUpdater.quitAndInstall();
+  }, 3000);
 });
-
 // Create login window
 function createWindow () {
   mainWindow = new BrowserWindow({
@@ -71,6 +100,14 @@ function createWindow () {
   mainWindow.on('closed', function () {
   mainWindow = null
   });
+  // Connect to MongoDB
+  if (process.env.NODE_ENV !== 'development') {
+    connectDB(db);
+  } else {
+    setTimeout(() => {
+      connectDB(db);
+    }, 1000);
+  }
   const mainMenu = Menu.buildFromTemplate(myFunc.mainMenuTemplate(app));
   Menu.setApplicationMenu(mainMenu);
 };
@@ -95,6 +132,28 @@ function createHomeWindow(){
   });
   const mainMenu = Menu.buildFromTemplate(myFunc.mainMenuTemplate(app));
   Menu.setApplicationMenu(mainMenu);
+}
+
+// Create update window
+function createUpdateWindow(){
+  updateWindow = new BrowserWindow({
+    width: 500,
+    height:150,
+    resizable: false,
+    darkTheme: true,
+    title:'Society Upload Tool',
+    webPreferences: {
+      nodeIntegration: true,
+      enableRemoteModule: true
+    }
+  });
+  updateWindow.removeMenu();
+  updateWindow.loadURL(path.join(__dirname, './views/checkUpdate.html'));
+  updateWindow.on('close', function(){
+    updateWindow = null;
+  });
+  // const mainMenu = Menu.buildFromTemplate(myFunc.mainMenuTemplate(app));
+  // Menu.setApplicationMenu(mainMenu);
 }
 
 // Create upload window
@@ -157,21 +216,26 @@ function connectDB(db) {
 
 
 ///////////////////////////////////// On ready
-app.on('ready', createWindow)
+if (process.env.NODE_ENV === 'development') {
+  app.on('ready', createWindow)
+} else {
+  app.on('ready', createUpdateWindow)
+}
+
 app.on('ready', function()  {
   setTimeout(() => {
     autoUpdater.checkForUpdatesAndNotify();
   }, 1000);
 });
 
-// Connect to MongoDB
-if (process.env.NODE_ENV !== 'development') {
-  connectDB(db);
-} else {
-  setTimeout(() => {
-    connectDB(db);
-  }, 1000);
-}
+// // Connect to MongoDB
+// if (process.env.NODE_ENV !== 'development') {
+//   connectDB(db);
+// } else {
+//   setTimeout(() => {
+//     connectDB(db);
+//   }, 1000);
+// }
 
 app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') {
@@ -183,6 +247,9 @@ app.on('activate', function () {
   if (mainWindow === null) {
     createWindow()
   }
+  // if (updateWindow === null) {
+  //   createUpdateWindow()
+  // }
 })
 
 //Auth user
