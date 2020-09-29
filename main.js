@@ -315,8 +315,8 @@ async function mainProcess(arrAcc, arrItems){
   var arrTags = [];
 
   var tagNameVal = arrItems[1].split(',');
-  var nicheVal = tagNameVal[0];
-  var subNicheVal = tagNameVal[1];
+  var nicheVal = tagNameVal[0].trim();
+  var subNicheVal = tagNameVal[1].trim();
   var nicheIndex = 0;
   var nextNicheIndex = 0;
   const tagsPath =
@@ -355,8 +355,12 @@ async function mainProcess(arrAcc, arrItems){
   });
 
   setTimeout(() => {
-    tagListArr = arrTags[0].split(' ');
-  }, 10000);
+    if (typeof(arrTags[0]) != 'undefined') {
+      tagListArr = arrTags[0].split(' ');
+    } else {
+      tagListArr = ''
+    }
+  }, 13000);
   
   const {browser, page} =  await openBrowser(proxyIP);
   await page.authenticate({'username':proxyUser, 'password': proxyPass});
@@ -573,6 +577,9 @@ async function mainProcess(arrAcc, arrItems){
       fs.rename(imgPath,path.join(newPath,'./'+imgName), (err) => {
         if (err) throw err
         homeWindow.webContents.send('logs',`Move ${imgName} to done folder`);
+      });
+      artTitleSplit.forEach(element => {
+        tagListArr.splice(0,1);
       });
     }
   }
