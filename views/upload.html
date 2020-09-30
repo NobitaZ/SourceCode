@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <link rel="stylesheet" href="styles.css">
     <!-- <script src="upload.js"></script> -->
     <title>Society6 Upload Tool</title>
@@ -11,12 +13,13 @@
         body {
             font-family: 'Varela Round', sans-serif;
         }
+
         /* Style to center grid column */
-        .col-centered{
+        .col-centered {
             float: none;
             margin: 0 auto;
         }
-        
+
         /* Some custom styles to beautify this example */
         /* .row{
             background: #dbdfe5;
@@ -24,13 +27,14 @@
         /* .form-control {
             margin: auto auto 0px -30px;
         } */
-        .demo-content{
+        .demo-content {
             padding: 25px;
             font-size: 18px;
             background: #abb1b8;
         }
     </style>
 </head>
+
 <body>
     <nav class="navbar navbar-expand-md bg-dark navbar-dark">
         <label class="navbar-brand">Society6 Upload Tool</label>
@@ -40,7 +44,7 @@
         <div class="row my-3">
             <div id="upload-form" class="col-sm-6 text-center">
                 <button class='btn btn-primary btn-xs my-xs-btn' type='button' onClick='uploadFunc()'>
-                <span class='glyphicon glyphicon-pencil'></span> Upload </button><br>
+                    <span class='glyphicon glyphicon-pencil'></span> Upload </button><br>
                 <span id="file-name"></span>
             </div>
             <div id="tag-form" class="col-sm-6 text-center">
@@ -53,92 +57,93 @@
         <div class="row my-3">
             <div class="col-sm-12 text-center">
                 <button id="btnProcess" class='btn btn-primary btn-xs my-xs-btn' type='button'>
-                <span class='glyphicon glyphicon-pencil'></span> Submit </button><br>
+                    <span class='glyphicon glyphicon-pencil'></span> Submit </button><br>
             </div>
         </div>
     </div>
-<script>
-    const electron = require('electron').remote;
-    const {dialog} = electron;
-    const {ipcRenderer} = require('electron');
-    const parse = require('csv-parse')
-    const path = require('path');
-    const fs = require('fs');
+    <script>
+        const electron = require('electron').remote;
+        const { dialog } = electron;
+        const { ipcRenderer } = require('electron');
+        const parse = require('csv-parse')
+        const path = require('path');
+        const fs = require('fs');
 
-    const fileName = document.getElementById('file-name');
-    var tagName = document.getElementById('tagname');
-    var arrImgs = {};
-    function uploadFunc() {
-        const regexStr = /([^\\]+$)/;
-        const imgs = dialog.showOpenDialogSync({
-            title: 'Image Upload',
-            properties:['openFile', 'multiSelections'],
-            filters: [{
-                name: 'Images',
-                extensions: ['jpg', 'png', 'rgb']
-            }]
-        })
-        arrImgs = imgs;
-        fileName.innerHTML = "";
-        imgs.forEach(imgPath => {
-            var imgName = imgPath.split(regexStr)
-            fileName.innerHTML += imgName[1] + "<br>";
-        });
-    }
+        const fileName = document.getElementById('file-name');
+        var tagName = document.getElementById('tagname');
+        var arrImgs = {};
+        function uploadFunc() {
+            const regexStr = /([^\\]+$)/;
+            const imgs = dialog.showOpenDialogSync({
+                title: 'Image Upload',
+                properties: ['openFile', 'multiSelections'],
+                filters: [{
+                    name: 'Images',
+                    extensions: ['jpg', 'png', 'rgb']
+                }]
+            })
+            arrImgs = imgs;
+            fileName.innerHTML = "";
+            imgs.forEach(imgPath => {
+                var imgName = imgPath.split(regexStr)
+                fileName.innerHTML += imgName[1] + "<br>";
+            });
+        }
 
-    function readTags() {
-        var tagNameVal = tagName.value.split(',');
-        var nicheVal = tagNameVal[0];
-        var subNicheVal = tagNameVal[1];
-        let nicheIndex = 0;
-        let nextNicheIndex = 0;
-        fs.readFile('./tags.csv', function(err, data) {
-            if (err) {
-                throw err;
-            }
-            parse(data, {columns: false, trim: true}, function(err, rows) {
-                //debugger;
+        function readTags() {
+            var tagNameVal = tagName.value.split(',');
+            var nicheVal = tagNameVal[0];
+            var subNicheVal = tagNameVal[1];
+            let nicheIndex = 0;
+            let nextNicheIndex = 0;
+            fs.readFile('./tags.csv', function (err, data) {
                 if (err) {
                     throw err;
                 }
-                for (let index = 1; index < rows.length; index++) {
-                    const element = rows[index];
-                    if (element[0].trim() == nicheVal) {
-                        nicheIndex = index;
-                        continue;
+                parse(data, { columns: false, trim: true }, function (err, rows) {
+                    //debugger;
+                    if (err) {
+                        throw err;
                     }
-                    if (element[0] != '' && index > nicheIndex && nicheIndex != 0) {
-                        nextNicheIndex = index;
-                        break;
+                    for (let index = 1; index < rows.length; index++) {
+                        const element = rows[index];
+                        if (element[0].trim() == nicheVal) {
+                            nicheIndex = index;
+                            continue;
+                        }
+                        if (element[0] != '' && index > nicheIndex && nicheIndex != 0) {
+                            nextNicheIndex = index;
+                            break;
+                        }
                     }
-                }
-                //debugger;
-                for (let i = nicheIndex; i < nextNicheIndex; i++) {
-                    const element = rows[i];
-                    if (element[1].trim() == subNicheVal) {
-                        arrTags.push(element[2].trim());
-                        break;
+                    //debugger;
+                    for (let i = nicheIndex; i < nextNicheIndex; i++) {
+                        const element = rows[i];
+                        if (element[1].trim() == subNicheVal) {
+                            arrTags.push(element[2].trim());
+                            break;
+                        }
                     }
-                }
+                });
             });
-        });
-    }
-
-    const btnProcess = document.getElementById("btnProcess");
-    btnProcess.addEventListener("click", function (e) {
-        e.preventDefault;
-        //readTags();
-        if (arrImgs == null || arrImgs == '' || JSON.stringify(arrImgs) == '{}') {
-            const errMsgBox = dialog.showErrorBox('No Images Selected !!!', '');
-        } else if (tagName.value == '') {
-            const errMsgBox = dialog.showErrorBox('No Tag Name !!!', '');
-        } else if (!tagName.value.includes(',')) {
-            const errMsgBox = dialog.showErrorBox('Wrong format Tag Name !!!', '');
-        } else {
-            const items = [arrImgs, tagName.value];
-            ipcRenderer.send('upload-clicked', items);
         }
-    })
-</script>
+
+        const btnProcess = document.getElementById("btnProcess");
+        btnProcess.addEventListener("click", function (e) {
+            e.preventDefault;
+            //readTags();
+            if (arrImgs == null || arrImgs == '' || JSON.stringify(arrImgs) == '{}') {
+                const errMsgBox = dialog.showErrorBox('No Images Selected !!!', '');
+            } else if (tagName.value == '') {
+                const errMsgBox = dialog.showErrorBox('No Tag Name !!!', '');
+            } else if (!tagName.value.includes(',')) {
+                const errMsgBox = dialog.showErrorBox('Wrong format Tag Name !!!', '');
+            } else {
+                const items = [arrImgs, tagName.value];
+                ipcRenderer.send('upload-clicked', items);
+            }
+        })
+    </script>
 </body>
+
 </html>

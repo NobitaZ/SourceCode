@@ -4,17 +4,17 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const User = require(path.join(__dirname, 'models/User'));
 const Logs = require(path.join(__dirname, 'models/Logs'));
-const {app, BrowserWindow, Menu, ipcMain, remote, dialog} = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, remote, dialog } = require('electron');
 const config = require(path.join(__dirname, './config/keys'));
 const fs = require('fs');
 const parse = require('csv-parse');
 const WindowsToaster = require('node-notifier').WindowsToaster;
 const myFunc = require(path.join(__dirname, './src/windowRenderer'));
-const {autoUpdater} = require("electron-updater");
+const { autoUpdater } = require("electron-updater");
 
 //Enviroment
-// process.env.NODE_ENV = 'development';
-process.env.NODE_ENV = 'production';
+process.env.NODE_ENV = 'development';
+// process.env.NODE_ENV = 'production';
 
 let mainWindow, homeWindow, uploadWindow, importWindow, updateWindow;
 
@@ -42,7 +42,7 @@ autoUpdater.on('update-not-available', (info) => {
   updateWindow.webContents.send('msg-update', "You are using the latest version");
   setTimeout(() => {
     createWindow();
-    updateWindow.close();  
+    updateWindow.close();
   }, 1000);
 })
 autoUpdater.on('error', (err) => {
@@ -59,7 +59,7 @@ autoUpdater.on('update-downloaded', (info) => {
   }, 3000);
 });
 // Create login window
-function createWindow () {
+function createWindow() {
   mainWindow = new BrowserWindow({
     width: 500,
     height: 500,
@@ -71,7 +71,7 @@ function createWindow () {
   });
   mainWindow.loadURL(path.join(__dirname, `./views/login.html#v${app.getVersion()}`));
   mainWindow.on('closed', function () {
-  mainWindow = null
+    mainWindow = null
   });
   // Connect to MongoDB
   if (process.env.NODE_ENV !== 'development') {
@@ -86,13 +86,13 @@ function createWindow () {
 };
 
 // Create home window
-function createHomeWindow(){
+function createHomeWindow() {
   homeWindow = new BrowserWindow({
     width: 1280,
-    height:800,
+    height: 800,
     resizable: false,
     darkTheme: true,
-    title:'Society Upload Tool',
+    title: 'Society Upload Tool',
     webPreferences: {
       nodeIntegration: true,
       enableRemoteModule: true
@@ -100,7 +100,7 @@ function createHomeWindow(){
   });
   homeWindow.removeMenu();
   homeWindow.loadURL(path.join(__dirname, './views/home.html'));
-  homeWindow.on('close', function(){
+  homeWindow.on('close', function () {
     homeWindow = null;
   });
   const mainMenu = Menu.buildFromTemplate(myFunc.mainMenuTemplate(app));
@@ -108,13 +108,13 @@ function createHomeWindow(){
 }
 
 // Create update window
-function createUpdateWindow(){
+function createUpdateWindow() {
   updateWindow = new BrowserWindow({
     width: 400,
-    height:150,
+    height: 150,
     resizable: false,
     darkTheme: true,
-    title:'Society Upload Tool',
+    title: 'Society Upload Tool',
     webPreferences: {
       nodeIntegration: true,
       enableRemoteModule: true
@@ -122,19 +122,19 @@ function createUpdateWindow(){
   });
   updateWindow.removeMenu();
   updateWindow.loadURL(path.join(__dirname, './views/checkUpdate.html'));
-  updateWindow.on('close', function(){
+  updateWindow.on('close', function () {
     updateWindow = null;
   });
 }
 
 // Create upload window
-function createUploadWindow(){
+function createUploadWindow() {
   uploadWindow = new BrowserWindow({
     width: 1024,
-    height:900,
+    height: 900,
     resizable: false,
     darkTheme: true,
-    title:'Society Upload Tool',
+    title: 'Society Upload Tool',
     webPreferences: {
       nodeIntegration: true,
       enableRemoteModule: true
@@ -142,7 +142,7 @@ function createUploadWindow(){
   });
   uploadWindow.removeMenu();
   uploadWindow.loadURL(path.join(__dirname, './views/upload.html'));
-  uploadWindow.on('close', function(){
+  uploadWindow.on('close', function () {
     uploadWindow = null;
   });
   const mainMenu = Menu.buildFromTemplate(myFunc.mainMenuTemplate(app));
@@ -150,13 +150,13 @@ function createUploadWindow(){
 }
 
 // Create import acc window
-function createImportWindow(){
+function createImportWindow() {
   importWindow = new BrowserWindow({
     width: 600,
-    height:400,
+    height: 400,
     resizable: false,
     darkTheme: true,
-    title:'Society Upload Tool',
+    title: 'Society Upload Tool',
     webPreferences: {
       nodeIntegration: true,
       enableRemoteModule: true
@@ -164,25 +164,25 @@ function createImportWindow(){
   });
   importWindow.removeMenu();
   importWindow.loadURL(path.join(__dirname, './views/import.html'));
-  importWindow.on('close', function(){
+  importWindow.on('close', function () {
     importWindow = null;
   });
 }
 
 function connectDB(db) {
   mongoose
-  .connect(
-    db,
-    { useNewUrlParser: true ,useUnifiedTopology: true}
-  )
-  .then(() => {
-    mainWindow.webContents.send('db','connected');
-    console.log('MongoDB Connected')
-  })
-  .catch(err => {
-    console.log(err);
-    mainWindow.webContents.send('db','failed');
-  });
+    .connect(
+      db,
+      { useNewUrlParser: true, useUnifiedTopology: true }
+    )
+    .then(() => {
+      mainWindow.webContents.send('db', 'connected');
+      console.log('MongoDB Connected')
+    })
+    .catch(err => {
+      console.log(err);
+      mainWindow.webContents.send('db', 'failed');
+    });
 }
 
 
@@ -195,7 +195,7 @@ if (process.env.NODE_ENV === 'development') {
   app.on('ready', createUpdateWindow)
 }
 
-app.on('ready', function()  {
+app.on('ready', function () {
   autoUpdater.checkForUpdatesAndNotify();
 });
 
@@ -215,14 +215,14 @@ app.on('activate', function () {
 })
 
 //Auth user
-ipcMain.on('auth-form',function(e, item) {
+ipcMain.on('auth-form', function (e, item) {
   username = item['username'];
   password = item['password'];
   User.findOne({
     username: username
   }).then(user => {
     if (!user) {
-      mainWindow.webContents.send('msg-login','user-failed');
+      mainWindow.webContents.send('msg-login', 'user-failed');
       return;
     }
     // Match password
@@ -238,12 +238,12 @@ ipcMain.on('auth-form',function(e, item) {
         //       user: user.name,
         //       ip_address:ip
         //     }
-            // const newLogs = new Logs(ipLogs);
-            // await newLogs.save();
+        // const newLogs = new Logs(ipLogs);
+        // await newLogs.save();
         // })();
-        
+
       } else {
-        mainWindow.webContents.send('msg-login','pass-failed');
+        mainWindow.webContents.send('msg-login', 'pass-failed');
         return;
       }
     });
@@ -261,15 +261,15 @@ ipcMain.on('import-clicked', function (e, item) {
   createImportWindow();
 })
 
-ipcMain.on('import-success', function(e, item) {
+ipcMain.on('import-success', function (e, item) {
   importWindow.close();
-  homeWindow.webContents.send('reload-acc-info','reload');
+  homeWindow.webContents.send('reload-acc-info', 'reload');
 })
 
 // Handle upload button click
-ipcMain.on('upload-clicked', function(e, arrItems) {
+ipcMain.on('upload-clicked', function (e, arrItems) {
   //console.log('arrItems: ' + arrItems);
-  mainProcess(arrAcc,arrItems);
+  mainProcess(arrAcc, arrItems);
   uploadWindow.close();
 })
 
@@ -316,7 +316,7 @@ ipcMain.on('upload-clicked', function(e, arrItems) {
 //----------------------------------
 // MAIN PROCESS
 //----------------------------------
-async function mainProcess(arrAcc, arrItems){
+async function mainProcess(arrAcc, arrItems) {
   const accUsername = arrAcc[0];
   const accPassword = arrAcc[1];
   const proxyIP = arrAcc[2];
@@ -327,18 +327,18 @@ async function mainProcess(arrAcc, arrItems){
 
   // Read product
   const productPath =
-  process.env.NODE_ENV === 'development'
-    ? './data/product.csv'
-    : path.join(process.resourcesPath, 'data/product.csv');
-  fs.readFile(productPath, function(err, data) {
+    process.env.NODE_ENV === 'development'
+      ? './data/product.csv'
+      : path.join(process.resourcesPath, 'data/product.csv');
+  fs.readFile(productPath, function (err, data) {
     if (err) {
-        throw err;
+      throw err;
     }
-    parse(data, {columns: false, trim: true}, function(err, rows) {
-        let elements = rows[0];
-        elements.forEach(element => {
-          wallArtList.push(element);
-        });
+    parse(data, { columns: false, trim: true }, function (err, rows) {
+      let elements = rows[0];
+      elements.forEach(element => {
+        wallArtList.push(element);
+      });
     });
   });
 
@@ -352,61 +352,61 @@ async function mainProcess(arrAcc, arrItems){
   var nicheIndex = 0;
   var nextNicheIndex = 0;
   const tagsPath =
-  process.env.NODE_ENV === 'development'
-    ? './data/tags.csv'
-    : path.join(process.resourcesPath, 'data/tags.csv');
-  fs.readFile(tagsPath, function(err, data) {
+    process.env.NODE_ENV === 'development'
+      ? './data/tags.csv'
+      : path.join(process.resourcesPath, 'data/tags.csv');
+  fs.readFile(tagsPath, function (err, data) {
     if (err) {
-        throw err;
+      throw err;
     }
-    parse(data, {columns: false, trim: true}, function(err, rows) {
-        if (err) {
-            throw err;
+    parse(data, { columns: false, trim: true }, function (err, rows) {
+      if (err) {
+        throw err;
+      }
+      for (let index = 1; index < rows.length; index++) {
+        const element = rows[index];
+        if (element[0].trim() == nicheVal) {
+          nicheIndex = index;
+          continue;
         }
-        for (let index = 1; index < rows.length; index++) {
-            const element = rows[index];
-            if (element[0].trim() == nicheVal) {
-                nicheIndex = index;
-                continue;
-            }
-            if (element[0] != '' && index > nicheIndex && nicheIndex != 0) {
-                nextNicheIndex = index;
-                break;
-            }
+        if (element[0] != '' && index > nicheIndex && nicheIndex != 0) {
+          nextNicheIndex = index;
+          break;
         }
-        //debugger;
-        for (let i = nicheIndex; i < nextNicheIndex; i++) {
-            const element = rows[i];
-            if (element[1].trim() == subNicheVal) {
-                arrTags.push(element[2].trim());
-                break;
-            }
+      }
+      //debugger;
+      for (let i = nicheIndex; i < nextNicheIndex; i++) {
+        const element = rows[i];
+        if (element[1].trim() == subNicheVal) {
+          arrTags.push(element[2].trim());
+          break;
         }
+      }
     });
   });
 
   setTimeout(() => {
-    if (typeof(arrTags[0]) != 'undefined') {
+    if (typeof (arrTags[0]) != 'undefined') {
       tagListArr = arrTags[0].split(' ');
     } else {
       tagListArr = ''
     }
   }, 13000);
-  
-  const {browser, page} =  await openBrowser(proxyIP);
-  await page.authenticate({'username':proxyUser, 'password': proxyPass});
-  await page.setViewport({width: 1500, height: 900})
+
+  const { browser, page } = await openBrowser(proxyIP);
+  await page.authenticate({ 'username': proxyUser, 'password': proxyPass });
+  await page.setViewport({ width: 1500, height: 900 })
   await page.setDefaultNavigationTimeout(0);
 
   //Login
-  await page.goto(`https://society6.com/login`, {waitUntil: 'networkidle2'});
-  await page.type('#email',accUsername);
-  await page.type('#password',accPassword);
+  await page.goto(`https://society6.com/login`, { waitUntil: 'networkidle2' });
+  await page.type('#email', accUsername);
+  await page.type('#password', accPassword);
   await page.keyboard.press('Enter');
   await page.waitForSelector('#nav-user-sell');
   await myFunc.timeOutFunc(1000);
-  await homeWindow.webContents.send('logs','Login success');
-  await homeWindow.webContents.send('logs',`Acc: ${accUsername}`);
+  await homeWindow.webContents.send('logs', 'Login success');
+  await homeWindow.webContents.send('logs', `Acc: ${accUsername}`);
 
   //Process
   if (arrImgPath.length > 0) {
@@ -414,22 +414,22 @@ async function mainProcess(arrAcc, arrItems){
       //Get filename
       const regexStr = /([^\\]+)(?=\.\w+$)/;
       let imgPath = arrImgPath[index];
-      let imgName = imgPath.replace(/^.*[\\\/]/,'');
+      let imgName = imgPath.replace(/^.*[\\\/]/, '');
       let imgDirname = path.dirname(imgPath);
-      let artTitle = imgPath.match(regexStr)[0].replace(/[^a-zA-Z ]/g,'').trim();
+      let artTitle = imgPath.match(regexStr)[0].replace(/[^a-zA-Z ]/g, '').trim();
       let img = [];
       img.push(imgPath);
       let artTitleSplit = artTitle.split(' ');
       artTitleSplit.forEach(element => {
-        tagListArr.splice(0,0,element);
+        tagListArr.splice(0, 0, element);
       });
-      
+
       // Upload img
       await page.goto(`https://society6.com/artist-studio`);
       await myFunc.timeOutFunc(2000);
       await page.waitForFunction(() => {
         let modal = document.querySelector('#modal').children[0];
-        if (typeof(modal) == 'undefined') {
+        if (typeof (modal) == 'undefined') {
           return true;
         }
         modal.children[0].children[0].click();
@@ -437,12 +437,12 @@ async function mainProcess(arrAcc, arrItems){
       });
       await myFunc.timeOutFunc(500);
       await page.click('[qa-id="new_artwork_button"]');
-      await page.type('[qa-id="artworkTitle"]',artTitle);
+      await page.type('[qa-id="artworkTitle"]', artTitle);
       await myFunc.timeOutFunc(1000);
       const [fileChooser] = await Promise.all([
         page.waitForFileChooser(),
         page.click('[qa-id="dropZone"]')
-      ]).catch((error) => {console.log(error)});
+      ]).catch((error) => { console.log(error) });
 
       await fileChooser.accept(img);
       // Wait for button continue to enable
@@ -455,8 +455,8 @@ async function mainProcess(arrAcc, arrItems){
           }
         });
         return result;
-      }, {timeout: 0});
-      await homeWindow.webContents.send('logs',`Upload Successed: ${imgName}`);
+      }, { timeout: 0 });
+      await homeWindow.webContents.send('logs', `Upload Successed: ${imgName}`);
       // Copyright 
       await myFunc.timeOutFunc(500);
       await page.click('[qa-id="continue"]');
@@ -468,12 +468,12 @@ async function mainProcess(arrAcc, arrItems){
       await Promise.all([
         page.click('[qa-id="continue"]'),
         page.waitForNavigation({ waitUntil: 'networkidle2' }),
-      ]).catch((error) => {console.log(error)});
+      ]).catch((error) => { console.log(error) });
       await myFunc.timeOutFunc(5000);
       await page.click('[qa-id="categoryDropdown"]');
-      
+
       // //find dropdown selection
-      
+
       //choose Category
       const selectionID = await page.evaluate(() => {
         let arrDiv = document.querySelectorAll("[id^='react-select']");
@@ -509,7 +509,7 @@ async function mainProcess(arrAcc, arrItems){
         await page.keyboard.press('Enter');
         await myFunc.timeOutFunc(200);
       }
-      
+
       // Wall art type
       await myFunc.timeOutFunc(1000);
       const arrWallArt = await page.evaluate((wallArtList) => {
@@ -520,7 +520,7 @@ async function mainProcess(arrAcc, arrItems){
         if (arrCardFooter !== 'undefined') {
           for (let index = 0; index < wallArtList.length; index++) {
             const element = wallArtList[index];
-            const found = arrCardFooter.find((v,i) => {
+            const found = arrCardFooter.find((v, i) => {
               if (v.textContent.includes(element)) {
                 arrCardFooter.splice(i, 1);
                 return true;
@@ -534,7 +534,7 @@ async function mainProcess(arrAcc, arrItems){
               if (arrResult[index] !== 'undefined') {
                 if (arrResult[index].children[1].className.includes('enableSwitch')) {
                   setTimeout(() => {
-                    arrResult[index].children[1].click();  
+                    arrResult[index].children[1].click();
                   }, 1000);
                 }
               }
@@ -581,19 +581,19 @@ async function mainProcess(arrAcc, arrItems){
           result = true;
         }
         return result;
-      }, {timeout: 0});
-      await homeWindow.webContents.send('logs','Product published')
-      let newPath = path.join(imgDirname,'./done');
-      if (!fs.existsSync(newPath)){
+      }, { timeout: 0 });
+      await homeWindow.webContents.send('logs', 'Product published')
+      let newPath = path.join(imgDirname, './done');
+      if (!fs.existsSync(newPath)) {
         fs.mkdirSync(newPath);
-        await homeWindow.webContents.send('logs',`Folder done created`);
+        await homeWindow.webContents.send('logs', `Folder done created`);
       }
-      fs.rename(imgPath,path.join(newPath,'./'+imgName), (err) => {
+      fs.rename(imgPath, path.join(newPath, './' + imgName), (err) => {
         if (err) throw err
-        homeWindow.webContents.send('logs',`Move ${imgName} to done folder`);
+        homeWindow.webContents.send('logs', `Move ${imgName} to done folder`);
       });
       artTitleSplit.forEach(element => {
-        tagListArr.splice(0,1);
+        tagListArr.splice(0, 1);
       });
     }
   }
@@ -602,48 +602,48 @@ async function mainProcess(arrAcc, arrItems){
     withFallback: false
   })
   notifier.notify(
-		{
-		appName: "so6-upload-tool",
-		title: "Society6 Upload Tool",
-    message: "Upload Completed!",
+    {
+      appName: "so6-upload-tool",
+      title: "Society6 Upload Tool",
+      message: "Upload Completed!",
       sound: true
-		},
-		function(err, response) {
-		// Response is response from notification
-		  console.log("responded...");
-		}
-	);
-  await closeBrowser(browser).catch((error) => {console.log(error)});
+    },
+    function (err, response) {
+      // Response is response from notification
+      console.log("responded...");
+    }
+  );
+  await closeBrowser(browser).catch((error) => { console.log(error) });
 }
 
 // Open browser
 async function openBrowser(proxy) {
   ip = proxy.split(':')[0];
   var port = '';
-  typeof(proxy.split(':')[1]) == 'undefined' ? port = '4444' : port = proxy.split(':')[1];
+  typeof (proxy.split(':')[1]) == 'undefined' ? port = '4444' : port = proxy.split(':')[1];
 
   const chromePath =
-  process.env.NODE_ENV === 'development'
-    ? puppeteer.executablePath()
-    : path.join(process.resourcesPath, 'app.asar.unpacked/node_modules/puppeteer/.local-chromium/win64-782078/chrome-win/chrome.exe');
+    process.env.NODE_ENV === 'development'
+      ? puppeteer.executablePath()
+      : path.join(process.resourcesPath, 'app.asar.unpacked/node_modules/puppeteer/.local-chromium/win64-782078/chrome-win/chrome.exe');
   const browser = await puppeteer.launch({
     executablePath: chromePath,
     headless: false,
     ignoreHTTPSErrors: true,
-    args: [`--proxy-server=http://${ip}:${port}`,'--window-size=1500,900']
+    args: [`--proxy-server=http://${ip}:${port}`, '--window-size=1500,900']
     //--disable-web-security
   });
   console.log('Browser opened');
-  await homeWindow.webContents.send('logs','Browser openned');
+  await homeWindow.webContents.send('logs', 'Browser openned');
   const page = await browser.newPage();
-  let item = {browser: browser,page: page}
+  let item = { browser: browser, page: page }
   return item;
 }
 
 // Close browser
 async function closeBrowser(browser) {
   await browser.close();
-  await homeWindow.webContents.send('logs','Browser closed');
-  await homeWindow.webContents.send('logs','Upload Completed !!!');
+  await homeWindow.webContents.send('logs', 'Browser closed');
+  await homeWindow.webContents.send('logs', 'Upload Completed !!!');
   console.log(`Browser closed!`);
 }

@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <link rel="stylesheet" href="styles.css">
     <!-- <script src="upload.js"></script> -->
     <title>Society6 Import Account</title>
@@ -11,6 +13,7 @@
         body {
             font-family: 'Varela Round', sans-serif;
         }
+
         /*Style the text area */
         .import-area {
             margin-left: 20px;
@@ -18,11 +21,13 @@
             height: 260px;
             border: 1px solid #ccc;
         }
+
         .btnImport {
             margin-top: -300px;
         }
     </style>
 </head>
+
 <body>
     <nav class="navbar navbar-expand-md bg-dark navbar-dark">
         <label class="navbar-brand">Society6 Import Account</label>
@@ -30,51 +35,53 @@
     <br>
     <div id="container">
         <textarea class="import-area" id="import-area"></textarea>
-        <button id='btnImport' class='btn btn-primary btn-xs my-xs-btn btnImport' type='button'><span class='glyphicon glyphicon-pencil'></span> Save </button>
+        <button id='btnImport' class='btn btn-primary btn-xs my-xs-btn btnImport' type='button'><span
+                class='glyphicon glyphicon-pencil'></span> Save </button>
         <div id="msg-acc-import"></div>
     </div>
-<script>
-    const electron = require('electron').remote;
-    const stringify = require('csv-stringify');
-    const {dialog} = electron;
-    const {ipcRenderer} = require('electron');
-    //const parse = require('csv-parse')
-    const path = require('path');
-    const fs = require('fs');
+    <script>
+        const electron = require('electron').remote;
+        const stringify = require('csv-stringify');
+        const { dialog } = electron;
+        const { ipcRenderer } = require('electron');
+        //const parse = require('csv-parse')
+        const path = require('path');
+        const fs = require('fs');
 
-    const btnImport = document.getElementById("btnImport");
-    btnImport.addEventListener("click", function (e) {
-        e.preventDefault;
-        //readTags();
-        const inpTextArea = document.querySelector('#import-area').value;
-        if (inpTextArea == null || inpTextArea == '' || JSON.stringify(inpTextArea) == '{}') {
-            const errMsgBox = dialog.showErrorBox('Account can not be empty !!!', '');
-        } else {
-            let columns = {
-                account: 'Account',
-                password: 'Password',
-                proxy: 'Proxy',
-                proxyusername: 'ProxyUsername',
-                proxypassword: 'ProxyPassword'
-            };
-            let textSplit = inpTextArea.split('\n');
-            let data = [];
-            for (let index = 0; index < textSplit.length; index++) {
-                const row = textSplit[index].split('	');
-                if (row != '') {
-                    data.push(row);
-                }
-            }
-            stringify(data, {header: true, columns:columns}, function(err, output){
-                fs.writeFile("./info.csv", output, function(err) {
-                    if (err) {
-                        throw err;
+        const btnImport = document.getElementById("btnImport");
+        btnImport.addEventListener("click", function (e) {
+            e.preventDefault;
+            //readTags();
+            const inpTextArea = document.querySelector('#import-area').value;
+            if (inpTextArea == null || inpTextArea == '' || JSON.stringify(inpTextArea) == '{}') {
+                const errMsgBox = dialog.showErrorBox('Account can not be empty !!!', '');
+            } else {
+                let columns = {
+                    account: 'Account',
+                    password: 'Password',
+                    proxy: 'Proxy',
+                    proxyusername: 'ProxyUsername',
+                    proxypassword: 'ProxyPassword'
+                };
+                let textSplit = inpTextArea.split('\n');
+                let data = [];
+                for (let index = 0; index < textSplit.length; index++) {
+                    const row = textSplit[index].split('	');
+                    if (row != '') {
+                        data.push(row);
                     }
-                    ipcRenderer.send('import-success','success');
+                }
+                stringify(data, { header: true, columns: columns }, function (err, output) {
+                    fs.writeFile("./info.csv", output, function (err) {
+                        if (err) {
+                            throw err;
+                        }
+                        ipcRenderer.send('import-success', 'success');
+                    })
                 })
-            })
-        }
-    })
-</script>
+            }
+        })
+    </script>
 </body>
+
 </html>
