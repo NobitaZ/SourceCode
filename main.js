@@ -32,33 +32,6 @@ function sendStatusToWindow(text) {
 //----------------------------------
 // AUTO UPDATE
 //----------------------------------
-// autoUpdater.on('checking-for-update', () => {
-//   sendStatusToWindow('Checking for update...');
-// })
-// autoUpdater.on('update-available', (info) => {
-//   sendStatusToWindow('Update available.');
-// })
-// autoUpdater.on('update-not-available', (info) => {
-//   sendStatusToWindow('Update not available.');
-// })
-// autoUpdater.on('error', (err) => {
-//   sendStatusToWindow('Error in auto-updater. ' + err);
-// })
-// autoUpdater.on('download-progress', (progressObj) => {
-//   // let log_message = "Download speed: " + progressObj.bytesPerSecond;
-//   // log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
-//   // log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
-//   log_message = `Downloading... ${progressObj.percent}%`;
-//   sendStatusToWindow('Downloading...');
-// })
-// autoUpdater.on('update-downloaded', (info) => {
-//   sendStatusToWindow('Update downloaded');
-//   autoUpdater.quitAndInstall();
-// });
-
-//----------------------------------
-// AUTO UPDATE
-//----------------------------------
 autoUpdater.on('checking-for-update', () => {
   updateWindow.webContents.send('msg-update', 'Checking for update...');
 })
@@ -76,7 +49,7 @@ autoUpdater.on('error', (err) => {
   updateWindow.webContents.send('msg-update', 'Error in auto-updater. ' + err);
 })
 autoUpdater.on('download-progress', (progressObj) => {
-  updateWindow.webContents.send('msg-update', 'Downloading...');
+  updateWindow.webContents.send('msg-update', 'Downloading update...');
   updateWindow.webContents.send('download-progress', Math.round(progressObj.percent));
 })
 autoUpdater.on('update-downloaded', (info) => {
@@ -137,7 +110,7 @@ function createHomeWindow(){
 // Create update window
 function createUpdateWindow(){
   updateWindow = new BrowserWindow({
-    width: 500,
+    width: 400,
     height:150,
     resizable: false,
     darkTheme: true,
@@ -152,8 +125,6 @@ function createUpdateWindow(){
   updateWindow.on('close', function(){
     updateWindow = null;
   });
-  // const mainMenu = Menu.buildFromTemplate(myFunc.mainMenuTemplate(app));
-  // Menu.setApplicationMenu(mainMenu);
 }
 
 // Create upload window
@@ -215,7 +186,9 @@ function connectDB(db) {
 }
 
 
-///////////////////////////////////// On ready
+//----------------------------------
+// On ready
+//----------------------------------
 if (process.env.NODE_ENV === 'development') {
   app.on('ready', createWindow)
 } else {
@@ -223,19 +196,8 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 app.on('ready', function()  {
-  setTimeout(() => {
-    autoUpdater.checkForUpdatesAndNotify();
-  }, 1000);
+  autoUpdater.checkForUpdatesAndNotify();
 });
-
-// // Connect to MongoDB
-// if (process.env.NODE_ENV !== 'development') {
-//   connectDB(db);
-// } else {
-//   setTimeout(() => {
-//     connectDB(db);
-//   }, 1000);
-// }
 
 app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') {
@@ -350,7 +312,10 @@ ipcMain.on('upload-clicked', function(e, arrItems) {
 //     })
 //   });
 // }
-//Main process function
+
+//----------------------------------
+// MAIN PROCESS
+//----------------------------------
 async function mainProcess(arrAcc, arrItems){
   const accUsername = arrAcc[0];
   const accPassword = arrAcc[1];
@@ -395,7 +360,6 @@ async function mainProcess(arrAcc, arrItems){
         throw err;
     }
     parse(data, {columns: false, trim: true}, function(err, rows) {
-        //debugger;
         if (err) {
             throw err;
         }
@@ -436,31 +400,14 @@ async function mainProcess(arrAcc, arrItems){
 
   //Login
   await page.goto(`https://society6.com/login`, {waitUntil: 'networkidle2'});
-  await myFunc.timeOutFunc(1000);
   await page.type('#email',accUsername);
   await page.type('#password',accPassword);
-  // await page.keyboard.press('Enter');
-  //await myFunc.timeOutFunc(1000);
-  // const invalidLogin = await page.evaluate(() => {
-  //   let errMsg = document.querySelector('.app-messages');
-  //   if (errMsg != null || errMsg !== 'undefined') {
-      //homeWindow.webContents.send('logs', 'Login error');
-      //closeBrowser(browser);
-  //   }
-  // });
-  // await page.waitForNavigation({waitUntil: 'networkidle2'});
-
-  // await Promise.all([
-  //   page.keyboard.press('Enter'),
-  //   page.waitForNavigation({ waitUntil: 'networkidle0' }),
-  // ]).catch((error) => {console.log(error)});
-
   await page.keyboard.press('Enter');
   await page.waitForSelector('#nav-user-sell');
-  console.log('test')
   await myFunc.timeOutFunc(1000);
   await homeWindow.webContents.send('logs','Login success');
   await homeWindow.webContents.send('logs',`Acc: ${accUsername}`);
+
   //Process
   if (arrImgPath.length > 0) {
     for (let index = 0; index < arrImgPath.length; index++) {
@@ -680,8 +627,6 @@ async function openBrowser(proxy) {
     ? puppeteer.executablePath()
     : path.join(process.resourcesPath, 'app.asar.unpacked/node_modules/puppeteer/.local-chromium/win64-782078/chrome-win/chrome.exe');
   const browser = await puppeteer.launch({
-    // executablePath:`${process.cwd()}\\chrome\\chrome.exe`, 
-    //executablePath: puppeteer.executablePath(),
     executablePath: chromePath,
     headless: false,
     ignoreHTTPSErrors: true,

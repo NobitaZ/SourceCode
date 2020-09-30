@@ -141,6 +141,7 @@ const electron = require('electron');
 const {ipcRenderer} = electron;
 const app =electron.remote;
 const username = document.querySelector('#username');
+username.focus();
 const password = document.querySelector('#password');
 let version = window.location.hash.substring(1);
 document.getElementById('version').innerText = version;
@@ -162,6 +163,7 @@ ipcRenderer.on('msg-login', function(e, item){
 		msgDiv.className = '';
 		username.value = '';
 		password.value = '';
+		username.focus();
 		msgDiv.className += 'alert alert-danger alert-dismissible show';
 		// const itemText = document.createTextNode(item);
 		msgDiv.innerHTML = 'Incorrect Username';
@@ -169,6 +171,7 @@ ipcRenderer.on('msg-login', function(e, item){
 		msgDiv.className = '';
 		username.value = '';
 		password.value = '';
+		username.focus();
 		msgDiv.className += 'alert alert-danger alert-dismissible show';
 		// const itemText = document.createTextNode(item);
 		msgDiv.innerHTML = 'Incorrect Password';

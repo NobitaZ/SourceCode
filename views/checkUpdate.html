@@ -10,12 +10,16 @@
             font-family: 'Varela Round', sans-serif;
         }
         .msg {
+            margin-top: 20px;
             text-align: center;
         }
         .progress {
             margin-top: 20px;
             margin-left: 20px;
             margin-right: 20px;
+        }
+        .progress-bar {
+            background: linear-gradient(to left, #F2709C, #FF9472);
         }
     </style>
 </head>
@@ -38,11 +42,10 @@
         ipcRenderer.on('msg-update', (e,item) => {
             msg.innerHTML = item;
             if (item == 'Update available') {
-                _progress.style.display = "block";
+                _progress.style.display = "flex";
             }
         });
         ipcRenderer.on('download-progress', (e,item) => {
-            //progressBar.style.display = "block";
             progressBar.style.width = `${item}%`;
             progressBar.innerText = `${item}%`;
         })
