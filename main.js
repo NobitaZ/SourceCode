@@ -406,7 +406,8 @@ async function mainProcess(arrAcc, arrItems) {
   await page.type('#email', accUsername);
   await page.type('#password', accPassword);
   await page.keyboard.press('Enter');
-  await page.waitForSelector('#nav-user-sell');
+  await myFunc.timeOutFunc(1000);
+  await page.waitForSelector('#mn-logout');
   await myFunc.timeOutFunc(1000);
   await homeWindow.webContents.send('logs', 'Login success');
   await homeWindow.webContents.send('logs', `Acc: ${accUsername}`);
