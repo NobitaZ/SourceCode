@@ -68,11 +68,19 @@
                 for (let index = 0; index < textSplit.length; index++) {
                     const row = textSplit[index].split('	');
                     if (row != '') {
+                        if (typeof(row[3]) == 'undefined' || typeof(row[4]) == 'undefined') {
+                            row[3] = '';
+                            row[4] = '';
+                        }
                         data.push(row);
                     }
                 }
                 stringify(data, { header: true, columns: columns }, function (err, output) {
-                    fs.writeFile("./info.csv", output, function (err) {
+                    const infoPath =
+                        process.env.NODE_ENV === 'development'
+                        ? './data/info.csv'
+                        : path.join(process.resourcesPath, 'data/info.csv');
+                    fs.writeFile(infoPath, output, function (err) {
                         if (err) {
                             throw err;
                         }

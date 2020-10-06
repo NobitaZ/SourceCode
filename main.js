@@ -13,8 +13,8 @@ const myFunc = require(path.join(__dirname, './src/windowRenderer'));
 const { autoUpdater } = require("electron-updater");
 
 //Enviroment
-process.env.NODE_ENV = 'development';
-// process.env.NODE_ENV = 'production';
+// process.env.NODE_ENV = 'development';
+process.env.NODE_ENV = 'production';
 
 let mainWindow, homeWindow, uploadWindow, importWindow, updateWindow;
 
@@ -394,7 +394,10 @@ async function mainProcess(arrAcc, arrItems) {
   }, 13000);
 
   const { browser, page } = await openBrowser(proxyIP);
-  await page.authenticate({ 'username': proxyUser, 'password': proxyPass });
+  if (proxyUser.trim() != '' && proxyPass != '') {
+    console.log('here');
+    await page.authenticate({ 'username': proxyUser, 'password': proxyPass });
+  }
   await page.setViewport({ width: 1500, height: 900 })
   await page.setDefaultNavigationTimeout(0);
 
@@ -416,7 +419,7 @@ async function mainProcess(arrAcc, arrItems) {
       let imgPath = arrImgPath[index];
       let imgName = imgPath.replace(/^.*[\\\/]/, '');
       let imgDirname = path.dirname(imgPath);
-      let artTitle = imgPath.match(regexStr)[0].replace(/[^a-zA-Z ]/g, '').trim();
+      let artTitle = imgPath.match(regexStr)[0].replace(/-/g,' ').replace(/[^a-zA-Z ]/g, '').trim();
       let img = [];
       img.push(imgPath);
       let artTitleSplit = artTitle.split(' ');
