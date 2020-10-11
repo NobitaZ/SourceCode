@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="styles.css">
     <title>Society6 Upload Tool</title>
     <style>
+        .hidetext { -webkit-text-security: disc; /* Default */ }
         /* Style the tab */
         .tab {
             overflow: hidden;
@@ -151,8 +152,12 @@
                         const elements = rows[index];
                         var dataJson = JSON.stringify(elements);
                         var str = "<th scope='row'>" + index.toString() + "</th>";
-                        elements.forEach(element => {
-                            str += "<td>" + element + "</td>";
+                        elements.forEach((element, index) => {
+                            if (index == 1 || index == 4) {
+                                str += "<td class='hidetext'>" + element + "</td>";
+                            } else {
+                                str += "<td>" + element + "</td>";
+                            }
                         });
                         str += `<td><button class='btn btn-primary btn-xs my-xs-btn' type='button' onClick='selectFunc(` + dataJson + `)' >` +
                             "<span class='glyphicon glyphicon-pencil'></span> Upload </button></td>"
