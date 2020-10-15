@@ -1,251 +1,301 @@
 <!DOCTYPE html>
 <html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link
+            rel="stylesheet"
+            href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+            integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+            crossorigin="anonymous"
+        />
+        <link rel="stylesheet" href="styles.css" />
+        <title>Society6 Upload Tool</title>
+        <style>
+            .hidetext {
+                -webkit-text-security: disc; /* Default */
+            }
+            /* Style the tab */
+            .tab {
+                overflow: hidden;
+                border: 1px solid #ccc;
+                background-color: #f1f1f1;
+            }
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
-        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-    <link rel="stylesheet" href="styles.css">
-    <title>Society6 Upload Tool</title>
-    <style>
-        /* Style the tab */
-        .tab {
-            overflow: hidden;
-            border: 1px solid #ccc;
-            background-color: #f1f1f1;
-        }
+            /* Style the buttons that are used to open the tab content */
+            .tab button {
+                background-color: inherit;
+                float: left;
+                border: none;
+                outline: none;
+                cursor: pointer;
+                padding: 14px 16px;
+                transition: 0.3s;
+            }
 
-        /* Style the buttons that are used to open the tab content */
-        .tab button {
-            background-color: inherit;
-            float: left;
-            border: none;
-            outline: none;
-            cursor: pointer;
-            padding: 14px 16px;
-            transition: 0.3s;
-        }
+            /* Change background color of buttons on hover */
+            .tab button:hover {
+                background-color: #ddd;
+            }
 
-        /* Change background color of buttons on hover */
-        .tab button:hover {
-            background-color: #ddd;
-        }
+            /* Create an active/current tablink class */
+            .tab button.active {
+                background-color: #ccc;
+            }
 
-        /* Create an active/current tablink class */
-        .tab button.active {
-            background-color: #ccc;
-        }
+            /* Style the tab content */
+            .tabcontent {
+                display: none;
+                padding: 6px 12px;
+                border: 1px solid #ccc;
+                border-bottom: none;
+            }
 
-        /* Style the tab content */
-        .tabcontent {
-            display: none;
-            padding: 6px 12px;
-            border: 1px solid #ccc;
-            border-bottom: none;
-        }
+            /*Style the text area */
+            .textarea {
+                width: 250px;
+                height: 300px;
+                border: 1px solid #ccc;
+            }
 
-        /*Style the text area */
-        .textarea {
-            width: 250px;
-            height: 300px;
-            border: 1px solid #ccc;
-        }
+            .btnSave {
+                margin-top: -300px;
+            }
 
-        .btnSave {
-            margin-top: -300px;
-        }
+            .sticky {
+                position: fixed;
+                top: 0;
+                width: 100%;
+            }
+        </style>
+    </head>
 
-        .sticky {
-            position: fixed;
-            top: 0;
-            width: 100%;
-        }
-    </style>
-</head>
+    <body>
+        <div id="divTest"></div>
+        <nav class="navbar navbar-expand-md bg-dark navbar-dark">
+            <label class="navbar-brand">Society6 Upload Tool</label>
+        </nav>
+        <br />
+        <!-- Tab links -->
+        <div class="tab" id="tab">
+            <button class="tablinks active" onclick="openTab(event, 'account')">
+                Accounts
+            </button>
+            <button class="tablinks" onclick="openTab(event, 'product')">
+                Products
+            </button>
+            <button class="tablinks" onclick="openTab(event, 'logs')">
+                Logs
+            </button>
+        </div>
+        <div class="col-sm-12 text-right">
+            <button
+                class="btn btn-warning btn-xs my-xs-btn btnImport"
+                type="button"
+                onclick="importFunc()"
+            >
+                <span class="glyphicon glyphicon-pencil"></span> Import Account
+            </button>
+        </div>
+        <div id="account" class="tabcontent" style="display: block">
+            <table id="userTable" class="table table-hover">
+                <thead>
+                    <tr>
+                        <th scope="col">ID</th>
+                        <th scope="col">Account</th>
+                        <th scope="col">Password</th>
+                        <th scope="col">Proxy</th>
+                        <th scope="col">Proxy Username</th>
+                        <th scope="col">Proxy Password</th>
+                        <th scope="col">Function</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
 
-<body>
-    <div id="divTest"></div>
-    <nav class="navbar navbar-expand-md bg-dark navbar-dark">
-        <label class="navbar-brand">Society6 Upload Tool</label>
-    </nav>
-    <br>
-    <!-- Tab links -->
-    <div class="tab" id="tab">
-        <button class="tablinks active" onclick="openTab(event, 'account')">Accounts</button>
-        <button class="tablinks" onclick="openTab(event, 'product')">Products</button>
-        <button class="tablinks" onclick="openTab(event, 'logs')">Logs</button>
-    </div>
-    <div class="col-sm-12 text-right">
-        <button class='btn btn-warning btn-xs my-xs-btn btnImport' type='button' onclick='importFunc()'><span
-                class='glyphicon glyphicon-pencil'></span> Import Account </button>
-    </div>
-    <div id="account" class="tabcontent" style="display: block;">
-        <table id="userTable" class="table table-hover">
-            <thead>
-                <tr>
-                    <th scope="col">ID</th>
-                    <th scope="col">Account</th>
-                    <th scope="col">Password</th>
-                    <th scope="col">Proxy</th>
-                    <th scope="col">Proxy Username</th>
-                    <th scope="col">Proxy Password</th>
-                    <th scope="col">Function</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody">
+        <div id="product" class="tabcontent">
+            <h3>Products</h3>
+            <textarea id="product-area" class="textarea"></textarea>
+            <button
+                class="btn btn-primary btn-xs my-xs-btn btnSave"
+                type="button"
+                onclick="saveFunc()"
+            >
+                <span class="glyphicon glyphicon-pencil"></span> Save
+            </button>
+            <div id="msg-product"></div>
+        </div>
 
-            </tbody>
-        </table>
-    </div>
+        <div id="logs" class="tabcontent">
+            <h3>Logs</h3>
+            <ul style="list-style-type: circle"></ul>
+        </div>
 
-    <div id="product" class="tabcontent">
-        <h3>Products</h3>
-        <textarea id="product-area" class="textarea"></textarea>
-        <button class='btn btn-primary btn-xs my-xs-btn btnSave' type='button' onclick='saveFunc()'><span
-                class='glyphicon glyphicon-pencil'></span> Save </button>
-        <div id="msg-product"></div>
-    </div>
+        <script>
+            const stringify = require("csv-stringify");
+            const parse = require("csv-parse");
+            const electron = require("electron");
+            const remote = electron.remote;
+            const { ipcRenderer, dialog } = electron;
+            const path = require("path");
+            const fs = require("fs");
 
-    <div id="logs" class="tabcontent">
-        <h3>Logs</h3>
-        <ul style="list-style-type: circle"></ul>
-    </div>
-
-    <script>
-        const stringify = require('csv-stringify');
-        const parse = require('csv-parse')
-        const electron = require('electron');
-        const remote = electron.remote;
-        const { ipcRenderer, dialog } = electron;
-        const path = require('path');
-        const fs = require('fs');
-
-        var tableRef = document.getElementById('userTable').getElementsByTagName('tbody')[0];
-        var productArea = document.getElementById('product-area');
-        var ul = document.querySelector('ul');
-        const msgDiv = document.querySelector('#msg-product');
-        ipcRenderer.on('logs', function (e, item) {
-            // ul.className = 'collection';
-            const li = document.createElement('li');
-            // li.className = 'collection-item';
-            const itemText = document.createTextNode(item);
-            li.appendChild(itemText);
-            ul.appendChild(li);
-        });
-        ipcRenderer.on('reload-acc-info', function (e, item) {
-            readAccInfo();
-        })
-        function readAccInfo() {
-            const infoPath =
-                process.env.NODE_ENV === 'development'
-                    ? './data/info.csv'
-                    : path.join(process.resourcesPath, 'data/info.csv');
-            fs.readFile(infoPath, function (err, data) {
-                if (err) {
-                    throw err;
-                }
-                parse(data, { columns: false, trim: true }, function (err, rows) {
-                    tableRef.innerHTML = '';
-                    for (let index = 1; index < rows.length; index++) {
-                        const elements = rows[index];
-                        var dataJson = JSON.stringify(elements);
-                        var str = "<th scope='row'>" + index.toString() + "</th>";
-                        elements.forEach(element => {
-                            str += "<td>" + element + "</td>";
-                        });
-                        str += `<td><button class='btn btn-primary btn-xs my-xs-btn' type='button' onClick='selectFunc(` + dataJson + `)' >` +
-                            "<span class='glyphicon glyphicon-pencil'></span> Upload </button></td>"
-                        tableRef.insertRow().innerHTML = str;
-                    }
-                });
+            var tableRef = document
+                .getElementById("userTable")
+                .getElementsByTagName("tbody")[0];
+            var productArea = document.getElementById("product-area");
+            var ul = document.querySelector("ul");
+            const msgDiv = document.querySelector("#msg-product");
+            ipcRenderer.on("logs", function (e, item) {
+                // ul.className = 'collection';
+                const li = document.createElement("li");
+                // li.className = 'collection-item';
+                const itemText = document.createTextNode(item);
+                li.appendChild(itemText);
+                ul.appendChild(li);
             });
-        }
-        readAccInfo();
-        const productPath =
-            process.env.NODE_ENV === 'development'
-                ? './data/product.csv'
-                : path.join(process.resourcesPath, 'data/product.csv');
-        fs.readFile(productPath, function (err, data) {
-            if (err) {
-                throw err;
-            }
-            //console.log(data);
-            parse(data, { columns: false, trim: true }, function (err, rows) {
-                const elements = rows[0];
-                elements.forEach(element => {
-                    productArea.value += element + '\n';
-                });
+            ipcRenderer.on("reload-acc-info", function (e, item) {
+                readAccInfo();
             });
-        })
-        function openTab(evt, tabName) {
-            // Declare all variables
-            var i, tabcontent, tablinks;
-
-            // Get all elements with class="tabcontent" and hide them
-            tabcontent = document.getElementsByClassName("tabcontent");
-            for (i = 0; i < tabcontent.length; i++) {
-                tabcontent[i].style.display = "none";
-            }
-
-            // Get all elements with class="tablinks" and remove the class "active"
-            tablinks = document.getElementsByClassName("tablinks");
-            for (i = 0; i < tablinks.length; i++) {
-                tablinks[i].className = tablinks[i].className.replace(" active", "");
-            }
-
-            // Show the current tab, and add an "active" class to the button that opened the tab
-            document.getElementById(tabName).style.display = "block";
-            evt.currentTarget.className += " active";
-        }
-        function selectFunc(arrayData) {
-            if (arrayData[0] == '' || arrayData[1] == '') {
-                const errMsgBox = dialog.showErrorBox('Username or password incorrect !!!', '');
-            }
-            ipcRenderer.send('select-clicked', arrayData);
-            console.log(arrayData);
-        }
-        function saveFunc() {
-            let columns = {
-                product: 'Product'
-            };
-            let textSplit = productArea.value.split('\n').filter((v) => {
-                return v != "";
-            });
-            let data = [];
-            data.push(textSplit);
-            stringify(data, function (err, output) {
-                const product2Path =
-                    process.env.NODE_ENV === 'development'
-                        ? './data/product.csv'
-                        : path.join(process.resourcesPath, 'data/product.csv');
-                fs.writeFile(product2Path, output, function (err) {
+            function readAccInfo() {
+                const infoPath =
+                    process.env.NODE_ENV === "development"
+                        ? "./data/info.csv"
+                        : path.join(process.resourcesPath, "data/info.csv");
+                fs.readFile(infoPath, function (err, data) {
                     if (err) {
                         throw err;
                     }
-                    msgDiv.style.display = "block"
-                    msgDiv.className = 'alert alert-success alert-dismissible show';
-                    msgDiv.innerHTML = 'Successfully Saved';
-                    setTimeout(() => {
-                        msgDiv.style.display = "none"
-                    }, 2000);
-                })
-            })
-        }
-        function importFunc() {
-            ipcRenderer.send('import-clicked', 'openImportWindow');
-        }
-        window.onscroll = function () { stickyHeader() };
-        var navbar = document.getElementById("tab");
-        var sticky = navbar.offsetTop;
-        function stickyHeader() {
-            if (window.pageYOffset >= sticky) {
-                navbar.classList.add("sticky")
-            } else {
-                navbar.classList.remove("sticky");
+                    parse(data, { columns: false, trim: true }, function (
+                        err,
+                        rows
+                    ) {
+                        tableRef.innerHTML = "";
+                        for (let index = 1; index < rows.length; index++) {
+                            const elements = rows[index];
+                            var dataJson = JSON.stringify(elements);
+                            var str =
+                                "<th scope='row'>" + index.toString() + "</th>";
+                            elements.forEach((element, index) => {
+                                if (index == 1 || index == 4) {
+                                    str +=
+                                        "<td class='hidetext'>" +
+                                        element +
+                                        "</td>";
+                                } else {
+                                    str += "<td>" + element + "</td>";
+                                }
+                            });
+                            str +=
+                                `<td><button class='btn btn-primary btn-xs my-xs-btn' type='button' onClick='selectFunc(` +
+                                dataJson +
+                                `)' >` +
+                                "<span class='glyphicon glyphicon-pencil'></span> Upload </button></td>";
+                            tableRef.insertRow().innerHTML = str;
+                        }
+                    });
+                });
             }
-        }
-    </script>
-</body>
+            readAccInfo();
+            const productPath =
+                process.env.NODE_ENV === "development"
+                    ? "./data/product.csv"
+                    : path.join(process.resourcesPath, "data/product.csv");
+            fs.readFile(productPath, function (err, data) {
+                if (err) {
+                    throw err;
+                }
+                //console.log(data);
+                parse(data, { columns: false, trim: true }, function (
+                    err,
+                    rows
+                ) {
+                    const elements = rows[0];
+                    elements.forEach((element) => {
+                        productArea.value += element + "\n";
+                    });
+                });
+            });
+            function openTab(evt, tabName) {
+                // Declare all variables
+                var i, tabcontent, tablinks;
 
+                // Get all elements with class="tabcontent" and hide them
+                tabcontent = document.getElementsByClassName("tabcontent");
+                for (i = 0; i < tabcontent.length; i++) {
+                    tabcontent[i].style.display = "none";
+                }
+
+                // Get all elements with class="tablinks" and remove the class "active"
+                tablinks = document.getElementsByClassName("tablinks");
+                for (i = 0; i < tablinks.length; i++) {
+                    tablinks[i].className = tablinks[i].className.replace(
+                        " active",
+                        ""
+                    );
+                }
+
+                // Show the current tab, and add an "active" class to the button that opened the tab
+                document.getElementById(tabName).style.display = "block";
+                evt.currentTarget.className += " active";
+            }
+            function selectFunc(arrayData) {
+                if (arrayData[0] == "" || arrayData[1] == "") {
+                    const errMsgBox = dialog.showErrorBox(
+                        "Username or password incorrect !!!",
+                        ""
+                    );
+                }
+                ipcRenderer.send("select-clicked", arrayData);
+                console.log(arrayData);
+            }
+            function saveFunc() {
+                let columns = {
+                    product: "Product",
+                };
+                let textSplit = productArea.value.split("\n").filter((v) => {
+                    return v != "";
+                });
+                let data = [];
+                data.push(textSplit);
+                stringify(data, function (err, output) {
+                    const product2Path =
+                        process.env.NODE_ENV === "development"
+                            ? "./data/product.csv"
+                            : path.join(
+                                  process.resourcesPath,
+                                  "data/product.csv"
+                              );
+                    fs.writeFile(product2Path, output, function (err) {
+                        if (err) {
+                            throw err;
+                        }
+                        msgDiv.style.display = "block";
+                        msgDiv.className =
+                            "alert alert-success alert-dismissible show";
+                        msgDiv.innerHTML = "Successfully Saved";
+                        setTimeout(() => {
+                            msgDiv.style.display = "none";
+                        }, 2000);
+                    });
+                });
+            }
+            function importFunc() {
+                ipcRenderer.send("import-clicked", "openImportWindow");
+            }
+            window.onscroll = function () {
+                stickyHeader();
+            };
+            var navbar = document.getElementById("tab");
+            var sticky = navbar.offsetTop;
+            function stickyHeader() {
+                if (window.pageYOffset >= sticky) {
+                    navbar.classList.add("sticky");
+                } else {
+                    navbar.classList.remove("sticky");
+                }
+            }
+        </script>
+    </body>
 </html>
