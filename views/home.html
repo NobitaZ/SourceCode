@@ -67,6 +67,9 @@
                 top: 0;
                 width: 100%;
             }
+            .btnSync {
+                margin-right: 10px;
+            }
         </style>
     </head>
 
@@ -89,6 +92,13 @@
             </button>
         </div>
         <div class="col-sm-12 text-right">
+            <button
+                class="btn btn-warning btn-xs my-xs-btn btnSync"
+                type="button"
+                onclick="syncAllFunc()"
+            >
+                <span class="glyphicon glyphicon-pencil"></span> Sync All
+            </button>
             <button
                 class="btn btn-warning btn-xs my-xs-btn btnImport"
                 type="button"
@@ -295,6 +305,40 @@
                 } else {
                     navbar.classList.remove("sticky");
                 }
+            }
+            function syncAllFunc() {
+                const prompt = require("electron-prompt");
+                const config = require(path.join(
+                    __dirname,
+                    "./../config/keys"
+                ));
+                const { ipcRenderer } = require("electron");
+                let result = {};
+                prompt({
+                    title: "Sync All",
+                    label: "Password",
+                    height: 180,
+                    alwaysOnTop: true,
+                    skipTaskbar: false,
+                    inputAttrs: {
+                        type: "password",
+                        required: true,
+                    },
+                    type: "input",
+                })
+                    .then((r) => {
+                        if (r === null) {
+                            console.log("user cancelled");
+                        } else {
+                            console.log("result", r);
+                            if (r == config.syncAllPassword) {
+                                ipcRenderer.send("sync-clicked", "runSyncFunc");
+                            } else {
+                                alert("Wrong password");
+                            }
+                        }
+                    })
+                    .catch(console.error);
             }
         </script>
     </body>

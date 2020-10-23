@@ -11,14 +11,17 @@ const {
     ipcMain,
     remote,
     dialog,
+    shell,
 } = require("electron");
 const config = require(path.join(__dirname, "./config/keys"));
 const fs = require("fs");
 const parse = require("csv-parse");
+const parseSync = require("csv-parse/lib/sync");
 const WindowsToaster = require("node-notifier").WindowsToaster;
 const myFunc = require(path.join(__dirname, "./src/windowRenderer"));
 const { autoUpdater } = require("electron-updater");
 const log = require("electron-log");
+const stringify = require("csv-stringify");
 
 //Enviroment
 // process.env.NODE_ENV = "development";
@@ -291,6 +294,15 @@ ipcMain.on("upload-clicked", function (e, arrItems) {
     uploadWindow.close();
 });
 
+//Handle Sync All button click
+ipcMain.on("sync-clicked", function (e, arrItems) {
+    try {
+        syncAll();
+    } catch (error) {
+        log.error(error);
+    }
+});
+
 //Read file function
 // function readTagsFile(arrItems,arrTags) {
 //   return new Promise((resolve, reject) => {
@@ -329,6 +341,7 @@ ipcMain.on("upload-clicked", function (e, arrItems) {
 //       resolve(arrTags);
 //     })
 //   });
+
 // }
 
 //----------------------------------
@@ -746,6 +759,7 @@ async function openBrowser(proxy) {
     const browser = await puppeteer.launch({
         executablePath: chromePath,
         headless: false,
+        defaultViewport: null,
         ignoreHTTPSErrors: true,
         args: [`--proxy-server=http://${ip}:${port}`, "--window-size=1500,900"],
         //--disable-web-security
@@ -763,4 +777,146 @@ async function closeBrowser(browser) {
     await homeWindow.webContents.send("logs", "Browser closed");
     await homeWindow.webContents.send("logs", "Upload Completed !!!");
     console.log(`Browser closed!`);
+}
+
+//----------------------------------
+// SYNC ALL PROCESS
+//----------------------------------
+async function syncAll() {
+    const infoPath =
+        process.env.NODE_ENV === "development"
+            ? "./data/info.csv"
+            : path.join(process.resourcesPath, "data/info.csv");
+
+    let accJSON = fs.readFileSync(infoPath, "utf-8");
+    let listAcc = parseSync(accJSON, {
+        columns: true,
+        skip_empty_lines: true,
+    });
+    let data = [];
+    const dataPath =
+        process.env.NODE_ENV === "development"
+            ? "./data" + getFormattedTime() + ".csv"
+            : path.join(
+                  process.resourcesPath,
+                  "data" + getFormattedTime() + ".csv"
+              );
+
+    if (listAcc != "") {
+        for (let index = 0; index < listAcc.length; index++) {
+            const element = listAcc[index];
+            const accUsername = element.Account;
+            const accPassword = element.Password;
+            const proxyIP = element.Proxy;
+            const proxyUser = element.ProxyUsername;
+            const proxyPass = element.ProxyPassword;
+            const { browser, page } = await openBrowser(proxyIP);
+            if (proxyUser.trim() != "" && proxyPass.trim() != "") {
+                await page.authenticate({
+                    username: proxyUser,
+                    password: proxyPass,
+                });
+            }
+            await page.goto(`https://society6.com/login`, {
+                waitUntil: "networkidle2",
+            });
+            await page.type("#email", accUsername);
+            await page.type("#password", accPassword);
+            await page.keyboard.press("Enter");
+            await myFunc.timeOutFunc(1000);
+            try {
+                await page.waitForSelector("#mn-logout", { timeout: 10000 });
+                await myFunc.timeOutFunc(1000);
+                await homeWindow.webContents.send("logs", "Login success");
+                await homeWindow.webContents.send(
+                    "logs",
+                    `Acc: ${accUsername}`
+                );
+
+                await page.goto(
+                    "https://society6.com/account/earnings/overview",
+                    {
+                        waitUntil: "networkidle2",
+                    }
+                );
+                await page.waitForSelector(".earnings-table");
+                let pendingData = await page.evaluate(() => {
+                    const titles = document.querySelectorAll("td a");
+                    let data = {};
+                    for (let i = 0; i < titles.length; i++) {
+                        if (titles[i].textContent == "Pending") {
+                            data.qty =
+                                titles[
+                                    i
+                                ].parentElement.parentElement.children[1].textContent;
+                            data.earnings =
+                                titles[
+                                    i
+                                ].parentElement.parentElement.children[2].textContent;
+                            break;
+                        } else {
+                            data.qty = 0;
+                            data.earnings = "$0";
+                        }
+                    }
+                    return data;
+                });
+                pendingData.username = accUsername;
+                pendingData.valid = 1;
+                data.push(pendingData);
+                await closeBrowser(browser);
+            } catch (err) {
+                let pendingData = {};
+                pendingData.username = accUsername;
+                pendingData.qty = 0;
+                pendingData.earnings = "$0";
+                pendingData.valid = 0;
+                data.push(pendingData);
+                await closeBrowser(browser);
+                continue;
+            }
+        }
+        if (data.length > 0) {
+            let columns = {
+                account: "Account",
+                qty: "Qty",
+                earnings: "Earnings",
+                valid: "ValidAcc",
+            };
+            let input = [];
+            for (let index = 0; index < data.length; index++) {
+                const element = data[index];
+                let output = [];
+                output.push(element.username);
+                output.push(element.qty);
+                output.push(element.earnings);
+                output.push(element.valid);
+                input.push(output);
+            }
+            stringify(input, { header: true, columns: columns }, function (
+                err,
+                output
+            ) {
+                fs.writeFile(dataPath, output, function (err) {
+                    if (err) {
+                        throw err;
+                    }
+                });
+            });
+        }
+        if (process.env.NODE_ENV === "development") {
+            shell.openExternal(path.join(__dirname, dataPath));
+        } else {
+            shell.openExternal(dataPath);
+        }
+    }
+}
+function getFormattedTime() {
+    var today = new Date();
+    var y = today.getFullYear();
+    var m = today.getMonth() + 1;
+    var d = today.getDate();
+    var h = today.getHours();
+    var mi = today.getMinutes();
+    return y + "" + m + "" + d + "" + h + "" + mi;
 }

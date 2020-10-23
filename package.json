@@ -1,6 +1,6 @@
 {
     "name": "society6-upload-tool",
-    "version": "1.1.6",
+    "version": "1.1.7",
     "description": "",
     "main": "main.js",
     "build": {
@@ -41,6 +41,7 @@
         "csv-stringify": "^5.5.1",
         "electron-log": "^4.2.4",
         "electron-packager": "^15.1.0",
+        "electron-prompt": "^1.6.0",
         "electron-updater": "^4.3.5",
         "jquery": "^3.5.1",
         "mongoose": "^5.10.3",
