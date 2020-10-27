@@ -4,15 +4,7 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const User = require(path.join(__dirname, "models/User"));
 const Logs = require(path.join(__dirname, "models/Logs"));
-const {
-    app,
-    BrowserWindow,
-    Menu,
-    ipcMain,
-    remote,
-    dialog,
-    shell,
-} = require("electron");
+const { app, BrowserWindow, Menu, ipcMain, remote, dialog, shell } = require("electron");
 const config = require(path.join(__dirname, "./config/keys"));
 const fs = require("fs");
 const parse = require("csv-parse");
@@ -29,8 +21,7 @@ process.env.NODE_ENV = "production";
 
 let mainWindow, homeWindow, uploadWindow, importWindow, updateWindow;
 
-const db =
-    process.env.NODE_ENV !== "development" ? config.mongoURI : config.localURI;
+const db = process.env.NODE_ENV !== "development" ? config.mongoURI : config.localURI;
 
 const csvFilePath = config.csvFilePath;
 //const ip_address = config.ip_address;
@@ -51,33 +42,21 @@ autoUpdater.on("update-available", (info) => {
     updateWindow.webContents.send("msg-update", "Update available");
 });
 autoUpdater.on("update-not-available", (info) => {
-    updateWindow.webContents.send(
-        "msg-update",
-        "You are using the latest version"
-    );
+    updateWindow.webContents.send("msg-update", "You are using the latest version");
     setTimeout(() => {
         createWindow();
         updateWindow.close();
     }, 1000);
 });
 autoUpdater.on("error", (err) => {
-    updateWindow.webContents.send(
-        "msg-update",
-        "Error in auto-updater. " + err
-    );
+    updateWindow.webContents.send("msg-update", "Error in auto-updater. " + err);
 });
 autoUpdater.on("download-progress", (progressObj) => {
     updateWindow.webContents.send("msg-update", "Downloading update...");
-    updateWindow.webContents.send(
-        "download-progress",
-        Math.round(progressObj.percent)
-    );
+    updateWindow.webContents.send("download-progress", Math.round(progressObj.percent));
 });
 autoUpdater.on("update-downloaded", (info) => {
-    updateWindow.webContents.send(
-        "msg-update",
-        "Update downloaded...Install in 3s"
-    );
+    updateWindow.webContents.send("msg-update", "Update downloaded...Install in 3s");
     setTimeout(() => {
         autoUpdater.quitAndInstall();
     }, 3000);
@@ -93,9 +72,7 @@ function createWindow() {
             enableRemoteModule: true,
         },
     });
-    mainWindow.loadURL(
-        path.join(__dirname, `./views/login.html#v${app.getVersion()}`)
-    );
+    mainWindow.loadURL(path.join(__dirname, `./views/login.html#v${app.getVersion()}`));
     mainWindow.on("closed", function () {
         mainWindow = null;
     });
@@ -401,11 +378,7 @@ async function mainProcess(arrAcc, arrItems) {
                         nicheIndex = index;
                         continue;
                     }
-                    if (
-                        element[0] != "" &&
-                        index > nicheIndex &&
-                        nicheIndex != 0
-                    ) {
+                    if (element[0] != "" && index > nicheIndex && nicheIndex != 0) {
                         nextNicheIndex = index;
                         break;
                     }
@@ -509,9 +482,7 @@ async function mainProcess(arrAcc, arrItems) {
                 // Wait for button continue to enable
                 await page.waitForFunction(
                     () => {
-                        let arrClassname = document
-                            .querySelector(`[qa-id="continue"]`)
-                            .className.split(" ");
+                        let arrClassname = document.querySelector(`[qa-id="continue"]`).className.split(" ");
                         var result = true;
                         arrClassname.forEach((ele) => {
                             if (ele.includes("Disabled")) {
@@ -522,10 +493,7 @@ async function mainProcess(arrAcc, arrItems) {
                     },
                     { timeout: 0 }
                 );
-                await homeWindow.webContents.send(
-                    "logs",
-                    `Upload Successed: ${imgName}`
-                );
+                await homeWindow.webContents.send("logs", `Upload Successed: ${imgName}`);
                 // Copyright
                 await myFunc.timeOutFunc(500);
                 await page.click('[qa-id="continue"]');
@@ -547,9 +515,7 @@ async function mainProcess(arrAcc, arrItems) {
 
                 //choose Category
                 const selectionID = await page.evaluate(() => {
-                    let arrDiv = document.querySelectorAll(
-                        "[id^='react-select']"
-                    );
+                    let arrDiv = document.querySelectorAll("[id^='react-select']");
                     let idSelect = "";
                     arrDiv.forEach((ele) => {
                         if (ele.textContent == "painting") {
@@ -586,18 +552,12 @@ async function mainProcess(arrAcc, arrItems) {
                 // Wall art type
                 await myFunc.timeOutFunc(1000);
                 const arrWallArt = await page.evaluate((wallArtList) => {
-                    var arrCardFooter = document.querySelectorAll(
-                        "[class^='cardFooter']"
-                    );
+                    var arrCardFooter = document.querySelectorAll("[class^='cardFooter']");
                     arrCardFooter = [...arrCardFooter];
                     var result = {};
                     var arrResult = [];
                     if (arrCardFooter !== "undefined") {
-                        for (
-                            let index = 0;
-                            index < wallArtList.length;
-                            index++
-                        ) {
+                        for (let index = 0; index < wallArtList.length; index++) {
                             const element = wallArtList[index];
                             const found = arrCardFooter.find((v, i) => {
                                 if (v.textContent.includes(element)) {
@@ -609,42 +569,20 @@ async function mainProcess(arrAcc, arrItems) {
                             arrResult.push(found);
                         }
                         if (arrResult.length > 0) {
-                            for (
-                                let index = 0;
-                                index < arrResult.length;
-                                index++
-                            ) {
+                            for (let index = 0; index < arrResult.length; index++) {
                                 if (arrResult[index] !== "undefined") {
-                                    if (
-                                        arrResult[
-                                            index
-                                        ].children[1].className.includes(
-                                            "enableSwitch"
-                                        )
-                                    ) {
+                                    if (arrResult[index].children[1].className.includes("enableSwitch")) {
                                         setTimeout(() => {
-                                            arrResult[
-                                                index
-                                            ].children[1].click();
+                                            arrResult[index].children[1].click();
                                         }, 1000);
                                     }
                                 }
                             }
                         }
 
-                        for (
-                            let index = 0;
-                            index < arrCardFooter.length;
-                            index++
-                        ) {
+                        for (let index = 0; index < arrCardFooter.length; index++) {
                             if (arrCardFooter[index] !== "undefined") {
-                                if (
-                                    arrCardFooter[
-                                        index
-                                    ].children[1].className.includes(
-                                        "disableSwitch"
-                                    )
-                                ) {
+                                if (arrCardFooter[index].children[1].className.includes("disableSwitch")) {
                                     arrCardFooter[index].children[1].click();
                                 }
                             }
@@ -658,9 +596,7 @@ async function mainProcess(arrAcc, arrItems) {
 
                 //remove checkmark
                 await page.waitForFunction(() => {
-                    let invalidTag = document.querySelector(
-                        'div[class^="tagInvalid"]'
-                    );
+                    let invalidTag = document.querySelector('div[class^="tagInvalid"]');
                     let result = false;
                     if (invalidTag == null || invalidTag === "undefined") {
                         result = true;
@@ -679,9 +615,7 @@ async function mainProcess(arrAcc, arrItems) {
                 await myFunc.timeOutFunc(500);
                 await page.waitForFunction(
                     () => {
-                        let selector = document.querySelectorAll(
-                            'span[class^="status"]'
-                        );
+                        let selector = document.querySelectorAll('span[class^="status"]');
                         var result = false;
                         if (selector[0].innerHTML == "published") {
                             result = true;
@@ -694,24 +628,14 @@ async function mainProcess(arrAcc, arrItems) {
                 let newPath = path.join(imgDirname, "./done");
                 if (!fs.existsSync(newPath)) {
                     fs.mkdirSync(newPath);
-                    await homeWindow.webContents.send(
-                        "logs",
-                        `Folder done created`
-                    );
+                    await homeWindow.webContents.send("logs", `Folder done created`);
                 }
-                fs.rename(
-                    imgPath,
-                    path.join(newPath, "./" + imgName),
-                    (err) => {
-                        if (err) {
-                            log.error(err);
-                        }
-                        homeWindow.webContents.send(
-                            "logs",
-                            `Move ${imgName} to done folder`
-                        );
+                fs.rename(imgPath, path.join(newPath, "./" + imgName), (err) => {
+                    if (err) {
+                        log.error(err);
                     }
-                );
+                    homeWindow.webContents.send("logs", `Move ${imgName} to done folder`);
+                });
                 artTitleSplit.forEach((element) => {
                     tagListArr.splice(0, 1);
                 });
@@ -745,9 +669,7 @@ async function mainProcess(arrAcc, arrItems) {
 async function openBrowser(proxy) {
     ip = proxy.split(":")[0];
     var port = "";
-    typeof proxy.split(":")[1] == "undefined"
-        ? (port = "4444")
-        : (port = proxy.split(":")[1]);
+    typeof proxy.split(":")[1] == "undefined" ? (port = "4444") : (port = proxy.split(":")[1]);
 
     const chromePath =
         process.env.NODE_ENV === "development"
@@ -775,7 +697,6 @@ async function openBrowser(proxy) {
 async function closeBrowser(browser) {
     await browser.close();
     await homeWindow.webContents.send("logs", "Browser closed");
-    await homeWindow.webContents.send("logs", "Upload Completed !!!");
     console.log(`Browser closed!`);
 }
 
@@ -784,75 +705,83 @@ async function closeBrowser(browser) {
 //----------------------------------
 async function syncAll() {
     const infoPath =
-        process.env.NODE_ENV === "development"
-            ? "./data/info.csv"
-            : path.join(process.resourcesPath, "data/info.csv");
+        process.env.NODE_ENV === "development" ? "./data/info.csv" : path.join(process.resourcesPath, "data/info.csv");
 
     let accJSON = fs.readFileSync(infoPath, "utf-8");
     let listAcc = parseSync(accJSON, {
         columns: true,
         skip_empty_lines: true,
     });
-    let data = [];
+    // let data = [];
     const dataPath =
         process.env.NODE_ENV === "development"
             ? "./data" + getFormattedTime() + ".csv"
-            : path.join(
-                  process.resourcesPath,
-                  "data" + getFormattedTime() + ".csv"
-              );
-
+            : path.join(process.resourcesPath, "data" + getFormattedTime() + ".csv");
+    await homeWindow.webContents.send("logs", "Sync All Process");
     if (listAcc != "") {
         for (let index = 0; index < listAcc.length; index++) {
+            let fileType = 0;
+            if (index == 0) {
+                fileType = 1;
+            }
             const element = listAcc[index];
             const accUsername = element.Account;
             const accPassword = element.Password;
             const proxyIP = element.Proxy;
             const proxyUser = element.ProxyUsername;
             const proxyPass = element.ProxyPassword;
-            const { browser, page } = await openBrowser(proxyIP);
+            const { browser, page } = await openBrowser(proxyIP).catch((error) => {
+                log.error(error);
+            });
             if (proxyUser.trim() != "" && proxyPass.trim() != "") {
                 await page.authenticate({
                     username: proxyUser,
                     password: proxyPass,
                 });
             }
-            await page.goto(`https://society6.com/login`, {
-                waitUntil: "networkidle2",
-            });
+            try {
+                await page.goto(`https://society6.com/login`, {
+                    waitUntil: "networkidle2",
+                });
+            } catch (error) {
+                let data = [];
+                log.error(error);
+                homeWindow.webContents.send("logs", `Acc: ${accUsername}`);
+                homeWindow.webContents.send("logs", "Proxy Error");
+                let pendingData = {};
+                pendingData.username = accUsername;
+                pendingData.qty = 0;
+                pendingData.earnings = "$0";
+                pendingData.accstatus = "Unknown";
+                pendingData.proxystatus = "DIE";
+                data.push(pendingData);
+                writeFileCsv(dataPath, data, fileType);
+                await myFunc.timeOutFunc(1000);
+                await closeBrowser(browser);
+                continue;
+            }
             await page.type("#email", accUsername);
             await page.type("#password", accPassword);
             await page.keyboard.press("Enter");
             await myFunc.timeOutFunc(1000);
             try {
+                let data = [];
                 await page.waitForSelector("#mn-logout", { timeout: 10000 });
                 await myFunc.timeOutFunc(1000);
                 await homeWindow.webContents.send("logs", "Login success");
-                await homeWindow.webContents.send(
-                    "logs",
-                    `Acc: ${accUsername}`
-                );
+                await homeWindow.webContents.send("logs", `Acc: ${accUsername}`);
 
-                await page.goto(
-                    "https://society6.com/account/earnings/overview",
-                    {
-                        waitUntil: "networkidle2",
-                    }
-                );
+                await page.goto("https://society6.com/account/earnings/overview", {
+                    waitUntil: "networkidle2",
+                });
                 await page.waitForSelector(".earnings-table");
                 let pendingData = await page.evaluate(() => {
                     const titles = document.querySelectorAll("td a");
                     let data = {};
                     for (let i = 0; i < titles.length; i++) {
                         if (titles[i].textContent == "Pending") {
-                            data.qty =
-                                titles[
-                                    i
-                                ].parentElement.parentElement.children[1].textContent;
-                            data.earnings =
-                                titles[
-                                    i
-                                ].parentElement.parentElement.children[2].textContent;
+                            data.qty = titles[i].parentElement.parentElement.children[1].textContent;
+                            data.earnings = titles[i].parentElement.parentElement.children[2].textContent;
                             break;
                         } else {
                             data.qty = 0;
@@ -862,47 +791,29 @@ async function syncAll() {
                     return data;
                 });
                 pendingData.username = accUsername;
-                pendingData.valid = 1;
+                pendingData.accstatus = "LIVE";
+                pendingData.proxystatus = "LIVE";
                 data.push(pendingData);
+                writeFileCsv(dataPath, data, fileType);
+                await myFunc.timeOutFunc(1000);
                 await closeBrowser(browser);
             } catch (err) {
+                let data = [];
+                log.error(err);
+                await homeWindow.webContents.send("logs", "Login error: ACC DIE");
+                await homeWindow.webContents.send("logs", `Acc: ${accUsername}`);
                 let pendingData = {};
                 pendingData.username = accUsername;
                 pendingData.qty = 0;
                 pendingData.earnings = "$0";
-                pendingData.valid = 0;
+                pendingData.accstatus = "DIE";
+                pendingData.proxystatus = "LIVE";
                 data.push(pendingData);
+                writeFileCsv(dataPath, data, fileType);
+                await myFunc.timeOutFunc(1000);
                 await closeBrowser(browser);
                 continue;
             }
-        }
-        if (data.length > 0) {
-            let columns = {
-                account: "Account",
-                qty: "Qty",
-                earnings: "Earnings",
-                valid: "ValidAcc",
-            };
-            let input = [];
-            for (let index = 0; index < data.length; index++) {
-                const element = data[index];
-                let output = [];
-                output.push(element.username);
-                output.push(element.qty);
-                output.push(element.earnings);
-                output.push(element.valid);
-                input.push(output);
-            }
-            stringify(input, { header: true, columns: columns }, function (
-                err,
-                output
-            ) {
-                fs.writeFile(dataPath, output, function (err) {
-                    if (err) {
-                        throw err;
-                    }
-                });
-            });
         }
         if (process.env.NODE_ENV === "development") {
             shell.openExternal(path.join(__dirname, dataPath));
@@ -910,6 +821,7 @@ async function syncAll() {
             shell.openExternal(dataPath);
         }
     }
+    await homeWindow.webContents.send("logs", "Sync All Done");
 }
 function getFormattedTime() {
     var today = new Date();
@@ -919,4 +831,42 @@ function getFormattedTime() {
     var h = today.getHours();
     var mi = today.getMinutes();
     return y + "" + m + "" + d + "" + h + "" + mi;
+}
+
+function writeFileCsv(path, data, type) {
+    let columns = {
+        username: "Account",
+        qty: "Qty",
+        earnings: "Earnings",
+        accstatus: "Acc Status",
+        proxystatus: "Proxy Status",
+    };
+
+    let input = [];
+    input.push(data[0].username);
+    input.push(data[0].qty);
+    input.push(data[0].earnings);
+    input.push(data[0].accstatus);
+    input.push(data[0].proxystatus);
+    let ipData = [];
+    ipData.push(input);
+    if (type == 1) {
+        //Create file
+        stringify(ipData, { header: true, columns: columns }, function (err, output) {
+            fs.writeFile(path, output, function (err) {
+                if (err) {
+                    throw err;
+                }
+            });
+        });
+    } else if (type == 0) {
+        //Append file
+        stringify(ipData, function (err, output) {
+            fs.writeFile(path, output, { flag: "a" }, function (err) {
+                if (err) {
+                    throw err;
+                }
+            });
+        });
+    }
 }
