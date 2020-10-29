@@ -81,29 +81,15 @@
         <br />
         <!-- Tab links -->
         <div class="tab" id="tab">
-            <button class="tablinks active" onclick="openTab(event, 'account')">
-                Accounts
-            </button>
-            <button class="tablinks" onclick="openTab(event, 'product')">
-                Products
-            </button>
-            <button class="tablinks" onclick="openTab(event, 'logs')">
-                Logs
-            </button>
+            <button class="tablinks active" onclick="openTab(event, 'account')">Accounts</button>
+            <button class="tablinks" onclick="openTab(event, 'product')">Products</button>
+            <button class="tablinks" onclick="openTab(event, 'logs')">Logs</button>
         </div>
         <div class="col-sm-12 text-right">
-            <button
-                class="btn btn-warning btn-xs my-xs-btn btnSync"
-                type="button"
-                onclick="syncAllFunc()"
-            >
+            <button class="btn btn-warning btn-xs my-xs-btn btnSync" type="button" onclick="syncAllFunc()">
                 <span class="glyphicon glyphicon-pencil"></span> Sync All
             </button>
-            <button
-                class="btn btn-warning btn-xs my-xs-btn btnImport"
-                type="button"
-                onclick="importFunc()"
-            >
+            <button class="btn btn-warning btn-xs my-xs-btn btnImport" type="button" onclick="importFunc()">
                 <span class="glyphicon glyphicon-pencil"></span> Import Account
             </button>
         </div>
@@ -117,7 +103,7 @@
                         <th scope="col">Proxy</th>
                         <th scope="col">Proxy Username</th>
                         <th scope="col">Proxy Password</th>
-                        <th scope="col">Function</th>
+                        <th scope="col"></th>
                     </tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
@@ -127,11 +113,7 @@
         <div id="product" class="tabcontent">
             <h3>Products</h3>
             <textarea id="product-area" class="textarea"></textarea>
-            <button
-                class="btn btn-primary btn-xs my-xs-btn btnSave"
-                type="button"
-                onclick="saveFunc()"
-            >
+            <button class="btn btn-primary btn-xs my-xs-btn btnSave" type="button" onclick="saveFunc()">
                 <span class="glyphicon glyphicon-pencil"></span> Save
             </button>
             <div id="msg-product"></div>
@@ -151,9 +133,7 @@
             const path = require("path");
             const fs = require("fs");
 
-            var tableRef = document
-                .getElementById("userTable")
-                .getElementsByTagName("tbody")[0];
+            var tableRef = document.getElementById("userTable").getElementsByTagName("tbody")[0];
             var productArea = document.getElementById("product-area");
             var ul = document.querySelector("ul");
             const msgDiv = document.querySelector("#msg-product");
@@ -177,22 +157,15 @@
                     if (err) {
                         throw err;
                     }
-                    parse(data, { columns: false, trim: true }, function (
-                        err,
-                        rows
-                    ) {
+                    parse(data, { columns: false, trim: true }, function (err, rows) {
                         tableRef.innerHTML = "";
                         for (let index = 1; index < rows.length; index++) {
                             const elements = rows[index];
                             var dataJson = JSON.stringify(elements);
-                            var str =
-                                "<th scope='row'>" + index.toString() + "</th>";
+                            var str = "<th scope='row'>" + index.toString() + "</th>";
                             elements.forEach((element, index) => {
                                 if (index == 1 || index == 4) {
-                                    str +=
-                                        "<td class='hidetext'>" +
-                                        element +
-                                        "</td>";
+                                    str += "<td class='hidetext'>" + element + "</td>";
                                 } else {
                                     str += "<td>" + element + "</td>";
                                 }
@@ -201,7 +174,12 @@
                                 `<td><button class='btn btn-primary btn-xs my-xs-btn' type='button' onClick='selectFunc(` +
                                 dataJson +
                                 `)' >` +
-                                "<span class='glyphicon glyphicon-pencil'></span> Upload </button></td>";
+                                "<span class='glyphicon glyphicon-pencil'></span> Upload </button>";
+                            str +=
+                                `<button style='margin-left:15px;' class='btn btn-primary btn-xs my-xs-btn' type='button' onClick='openFunc(` +
+                                dataJson +
+                                `)' >` +
+                                "<span class='glyphicon glyphicon-pencil'></span> Open </button></td>";
                             tableRef.insertRow().innerHTML = str;
                         }
                     });
@@ -217,10 +195,7 @@
                     throw err;
                 }
                 //console.log(data);
-                parse(data, { columns: false, trim: true }, function (
-                    err,
-                    rows
-                ) {
+                parse(data, { columns: false, trim: true }, function (err, rows) {
                     const elements = rows[0];
                     elements.forEach((element) => {
                         productArea.value += element + "\n";
@@ -240,10 +215,7 @@
                 // Get all elements with class="tablinks" and remove the class "active"
                 tablinks = document.getElementsByClassName("tablinks");
                 for (i = 0; i < tablinks.length; i++) {
-                    tablinks[i].className = tablinks[i].className.replace(
-                        " active",
-                        ""
-                    );
+                    tablinks[i].className = tablinks[i].className.replace(" active", "");
                 }
 
                 // Show the current tab, and add an "active" class to the button that opened the tab
@@ -252,10 +224,7 @@
             }
             function selectFunc(arrayData) {
                 if (arrayData[0] == "" || arrayData[1] == "") {
-                    const errMsgBox = dialog.showErrorBox(
-                        "Username or password incorrect !!!",
-                        ""
-                    );
+                    const errMsgBox = dialog.showErrorBox("Username or password incorrect !!!", "");
                 }
                 ipcRenderer.send("select-clicked", arrayData);
                 console.log(arrayData);
@@ -273,17 +242,13 @@
                     const product2Path =
                         process.env.NODE_ENV === "development"
                             ? "./data/product.csv"
-                            : path.join(
-                                  process.resourcesPath,
-                                  "data/product.csv"
-                              );
+                            : path.join(process.resourcesPath, "data/product.csv");
                     fs.writeFile(product2Path, output, function (err) {
                         if (err) {
                             throw err;
                         }
                         msgDiv.style.display = "block";
-                        msgDiv.className =
-                            "alert alert-success alert-dismissible show";
+                        msgDiv.className = "alert alert-success alert-dismissible show";
                         msgDiv.innerHTML = "Successfully Saved";
                         setTimeout(() => {
                             msgDiv.style.display = "none";
@@ -307,38 +272,42 @@
                 }
             }
             function syncAllFunc() {
-                const prompt = require("electron-prompt");
-                const config = require(path.join(
-                    __dirname,
-                    "./../config/keys"
-                ));
-                const { ipcRenderer } = require("electron");
-                let result = {};
-                prompt({
-                    title: "Sync All",
-                    label: "Password",
-                    height: 180,
-                    alwaysOnTop: true,
-                    skipTaskbar: false,
-                    inputAttrs: {
-                        type: "password",
-                        required: true,
-                    },
-                    type: "input",
-                })
-                    .then((r) => {
-                        if (r === null) {
-                            console.log("user cancelled");
-                        } else {
-                            console.log("result", r);
-                            if (r == config.syncAllPassword) {
-                                ipcRenderer.send("sync-clicked", "runSyncFunc");
-                            } else {
-                                alert("Wrong password");
-                            }
-                        }
+                if (process.env.NODE_ENV === "development") {
+                    ipcRenderer.send("sync-clicked", "runSyncFunc");
+                } else {
+                    const prompt = require("electron-prompt");
+                    const config = require(path.join(__dirname, "./../config/keys"));
+                    const { ipcRenderer } = require("electron");
+                    let result = {};
+                    prompt({
+                        title: "Sync All",
+                        label: "Password",
+                        height: 180,
+                        alwaysOnTop: true,
+                        skipTaskbar: false,
+                        inputAttrs: {
+                            type: "password",
+                            required: true,
+                        },
+                        type: "input",
                     })
-                    .catch(console.error);
+                        .then((r) => {
+                            if (r === null) {
+                                console.log("user cancelled");
+                            } else {
+                                console.log("result", r);
+                                if (r == config.syncAllPassword) {
+                                    ipcRenderer.send("sync-clicked", "runSyncFunc");
+                                } else {
+                                    alert("Wrong password");
+                                }
+                            }
+                        })
+                        .catch(console.error);
+                }
+            }
+            function openFunc(data) {
+                ipcRenderer.send("open-account", data);
             }
         </script>
     </body>

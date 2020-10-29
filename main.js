@@ -280,6 +280,15 @@ ipcMain.on("sync-clicked", function (e, arrItems) {
     }
 });
 
+//Handle Open Account
+ipcMain.on("open-account", function (e, data) {
+    try {
+        openAccount(data);
+    } catch (error) {
+        log.error(error);
+    }
+});
+
 //Read file function
 // function readTagsFile(arrItems,arrTags) {
 //   return new Promise((resolve, reject) => {
@@ -764,39 +773,9 @@ async function syncAll() {
             await page.type("#password", accPassword);
             await page.keyboard.press("Enter");
             await myFunc.timeOutFunc(1000);
+            let data = [];
             try {
-                let data = [];
-                await page.waitForSelector("#mn-logout", { timeout: 10000 });
-                await myFunc.timeOutFunc(1000);
-                await homeWindow.webContents.send("logs", "Login success");
-                await homeWindow.webContents.send("logs", `Acc: ${accUsername}`);
-
-                await page.goto("https://society6.com/account/earnings/overview", {
-                    waitUntil: "networkidle2",
-                });
-                await page.waitForSelector(".earnings-table");
-                let pendingData = await page.evaluate(() => {
-                    const titles = document.querySelectorAll("td a");
-                    let data = {};
-                    for (let i = 0; i < titles.length; i++) {
-                        if (titles[i].textContent == "Pending") {
-                            data.qty = titles[i].parentElement.parentElement.children[1].textContent;
-                            data.earnings = titles[i].parentElement.parentElement.children[2].textContent;
-                            break;
-                        } else {
-                            data.qty = 0;
-                            data.earnings = "$0";
-                        }
-                    }
-                    return data;
-                });
-                pendingData.username = accUsername;
-                pendingData.accstatus = "LIVE";
-                pendingData.proxystatus = "LIVE";
-                data.push(pendingData);
-                writeFileCsv(dataPath, data, fileType);
-                await myFunc.timeOutFunc(1000);
-                await closeBrowser(browser);
+                await page.waitForSelector("#mn-logout", { timeout: 15000 });
             } catch (err) {
                 let data = [];
                 log.error(err);
@@ -814,6 +793,52 @@ async function syncAll() {
                 await closeBrowser(browser);
                 continue;
             }
+            await homeWindow.webContents.send("logs", "Login SUCCESS");
+            await homeWindow.webContents.send("logs", `Acc: ${accUsername}`);
+
+            await page.goto("https://society6.com/account/earnings/overview", {
+                waitUntil: "networkidle2",
+            });
+            try {
+                await page.waitForSelector(".earnings-table", { timeout: 10000 });
+            } catch (err) {
+                let data = [];
+                log.error(err);
+                await homeWindow.webContents.send("logs", "NO SALES");
+                let pendingData = {};
+                pendingData.username = accUsername;
+                pendingData.qty = 0;
+                pendingData.earnings = "$0";
+                pendingData.accstatus = "LIVE";
+                pendingData.proxystatus = "LIVE";
+                data.push(pendingData);
+                writeFileCsv(dataPath, data, fileType);
+                await myFunc.timeOutFunc(1000);
+                await closeBrowser(browser);
+                continue;
+            }
+            let pendingData = await page.evaluate(() => {
+                const titles = document.querySelectorAll("td a");
+                let data = {};
+                for (let i = 0; i < titles.length; i++) {
+                    if (titles[i].textContent == "Pending") {
+                        data.qty = titles[i].parentElement.parentElement.children[1].textContent;
+                        data.earnings = titles[i].parentElement.parentElement.children[2].textContent;
+                        break;
+                    } else {
+                        data.qty = 0;
+                        data.earnings = "$0";
+                    }
+                }
+                return data;
+            });
+            pendingData.username = accUsername;
+            pendingData.accstatus = "LIVE";
+            pendingData.proxystatus = "LIVE";
+            data.push(pendingData);
+            writeFileCsv(dataPath, data, fileType);
+            await myFunc.timeOutFunc(1000);
+            await closeBrowser(browser);
         }
         if (process.env.NODE_ENV === "development") {
             shell.openExternal(path.join(__dirname, dataPath));
@@ -869,4 +894,43 @@ function writeFileCsv(path, data, type) {
             });
         });
     }
+}
+//----------------------------------
+// OPEN ACCOUNT PROCESS
+//----------------------------------
+async function openAccount(userInfo) {
+    const accUsername = userInfo[0];
+    const accPassword = userInfo[1];
+    const proxyIP = userInfo[2];
+    const proxyUser = userInfo[3];
+    const proxyPass = userInfo[4];
+    const { browser, page } = await openBrowser(proxyIP);
+    if (proxyUser.trim() != "" && proxyPass.trim() != "") {
+        await page.authenticate({
+            username: proxyUser,
+            password: proxyPass,
+        });
+    }
+    // await page.setViewport({ width: 1500, height: 900 });
+    await page.setDefaultNavigationTimeout(0);
+
+    //Login
+    await page.goto(`https://society6.com/login`, {
+        waitUntil: "networkidle2",
+    });
+    await page.type("#email", accUsername);
+    await page.type("#password", accPassword);
+    await page.keyboard.press("Enter");
+    await myFunc.timeOutFunc(1000);
+    try {
+        await page.waitForSelector("#mn-logout", { timeout: 15000 });
+    } catch (error) {
+        await homeWindow.webContents.send("logs", "Login error: ACC DIE");
+        await homeWindow.webContents.send("logs", `Acc: ${accUsername}`);
+        log.error(error);
+        return;
+    }
+    await myFunc.timeOutFunc(1000);
+    await homeWindow.webContents.send("logs", "Login success");
+    await homeWindow.webContents.send("logs", `Acc: ${accUsername}`);
 }
