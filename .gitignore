@@ -3,3 +3,5 @@ node_modules/
 release-builds/
 chrome/
 dist/
+.idea
+.env
