@@ -20,16 +20,13 @@ const publicIp = require("public-ip");
 
 //Enviroment
 // process.env.NODE_ENV = "development";
-process.env.NODE_ENV = "production";
+// process.env.NODE_ENV = "production";
 
 let mainWindow, homeWindow, uploadWindow, importWindow, updateWindow, adminWindow;
 
 let publicIPObj = {};
 
 const db = process.env.NODE_ENV !== "development" ? config.mongoURI : config.localURI;
-
-const csvFilePath = config.csvFilePath;
-//const ip_address = config.ip_address;
 
 //Send update status
 function sendStatusToWindow(text) {
@@ -561,12 +558,13 @@ async function mainProcess(arrAcc, arrItems) {
     await page.goto(`https://society6.com/login`, {
       waitUntil: "networkidle2",
     });
+    await myFunc.timeOutFunc(1000);
     await page.type("#email", accUsername);
+    await myFunc.timeOutFunc(2000);
     await page.type("#password", accPassword);
     await page.keyboard.press("Enter");
-    await myFunc.timeOutFunc(1000);
+    await myFunc.timeOutFunc(3000);
     await page.waitForSelector("#mn-logout");
-    await myFunc.timeOutFunc(1000);
     await homeWindow.webContents.send("logs", "Login success");
     await homeWindow.webContents.send("logs", `Acc: ${accUsername}`);
     //Process
@@ -594,7 +592,7 @@ async function mainProcess(arrAcc, arrItems) {
         });
         // Upload img
         await page.goto(`https://society6.com/artist-studio`);
-        await myFunc.timeOutFunc(2000);
+        await myFunc.timeOutFunc(3000);
         await page.waitForFunction(() => {
           let modal = document.querySelector("#modal").children[0];
           if (typeof modal == "undefined") {
@@ -603,10 +601,11 @@ async function mainProcess(arrAcc, arrItems) {
           modal.children[0].children[0].click();
           return true;
         });
-        await myFunc.timeOutFunc(500);
+        await myFunc.timeOutFunc(2000);
         await page.click('[qa-id="new_artwork_button"]');
+        await myFunc.timeOutFunc(2000);
         await page.type('[qa-id="artworkTitle"]', artTitle);
-        await myFunc.timeOutFunc(1000);
+        await myFunc.timeOutFunc(2000);
         const [fileChooser] = await Promise.all([
           page.waitForFileChooser(),
           page.click('[qa-id="dropZone"]'),
@@ -616,6 +615,7 @@ async function mainProcess(arrAcc, arrItems) {
 
         await fileChooser.accept(img);
         // Wait for button continue to enable
+
         await page.waitForFunction(
           () => {
             let arrClassname = document.querySelector(`[qa-id="continue"]`).className.split(" ");
@@ -631,13 +631,13 @@ async function mainProcess(arrAcc, arrItems) {
         );
         await homeWindow.webContents.send("logs", `Upload Successed: ${imgName}`);
         // Copyright
-        await myFunc.timeOutFunc(500);
+        await myFunc.timeOutFunc(2000);
         await page.click('[qa-id="continue"]');
-        await myFunc.timeOutFunc(500);
+        await myFunc.timeOutFunc(2000);
         await page.click('[qa-id="copyrightApproved"]');
-        await myFunc.timeOutFunc(500);
+        await myFunc.timeOutFunc(2000);
         await page.click('[qa-id="matureContentFalse"]');
-        await myFunc.timeOutFunc(1000);
+        await myFunc.timeOutFunc(2500);
         await Promise.all([
           page.click('[qa-id="continue"]'),
           page.waitForNavigation({ waitUntil: "networkidle2" }),
@@ -660,6 +660,7 @@ async function mainProcess(arrAcc, arrItems) {
           });
           return idSelect;
         });
+        await myFunc.timeOutFunc(500);
         await page.click("#" + selectionID);
 
         //check Category
@@ -680,13 +681,13 @@ async function mainProcess(arrAcc, arrItems) {
         for (let index = 0; index < tagListArr.length; index++) {
           const element = tagListArr[index];
           await page.type("#search-creatives", element);
-          await myFunc.timeOutFunc(100);
+          await myFunc.timeOutFunc(2000);
           await page.keyboard.press("Enter");
-          await myFunc.timeOutFunc(200);
+          await myFunc.timeOutFunc(2000);
         }
 
         // Wall art type
-        await myFunc.timeOutFunc(1000);
+        await myFunc.timeOutFunc(1500);
         const arrWallArt = await page.evaluate((wallArtList) => {
           var arrCardFooter = document.querySelectorAll("[class^='cardFooter']");
           arrCardFooter = [...arrCardFooter];
@@ -731,6 +732,7 @@ async function mainProcess(arrAcc, arrItems) {
         }, wallArtList);
 
         //remove checkmark
+        await myFunc.timeOutFunc(2000);
         await page.waitForFunction(() => {
           let invalidTag = document.querySelector('div[class^="tagInvalid"]');
           let result = false;
@@ -744,11 +746,11 @@ async function mainProcess(arrAcc, arrItems) {
 
         // Save and Publish
         await page.click('[qa-id="save"]');
-        await myFunc.timeOutFunc(2000);
+        await myFunc.timeOutFunc(4000);
         await page.click('[name="newsletterSignup"]');
-        await myFunc.timeOutFunc(700);
+        await myFunc.timeOutFunc(2000);
         await page.click('button[class^="button_publishStatus"]');
-        await myFunc.timeOutFunc(500);
+        await myFunc.timeOutFunc(3000);
         await page.waitForFunction(
           () => {
             let selector = document.querySelectorAll('span[class^="status"]');
@@ -819,6 +821,7 @@ async function openBrowser(proxy) {
     headless: false,
     defaultViewport: null,
     ignoreHTTPSErrors: true,
+    slowMo: 30,
     args: [`--proxy-server=http://${ip}:${port}`, "--window-size=1500,900"],
     //--disable-web-security
   });
