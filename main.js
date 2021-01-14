@@ -17,6 +17,7 @@ const log = require("electron-log");
 const stringify = require("csv-stringify");
 const getmac = require("getmac");
 const publicIp = require("public-ip");
+const logger = require("./helpers/logger");
 
 //Enviroment
 // process.env.NODE_ENV = "development";
@@ -24,7 +25,8 @@ const publicIp = require("public-ip");
 
 let mainWindow, homeWindow, uploadWindow, importWindow, updateWindow, adminWindow;
 
-let publicIPObj = {};
+let publicIPObj = {},
+  loggerObj = {};
 
 const db = process.env.NODE_ENV !== "development" ? config.mongoURI : config.localURI;
 
@@ -86,8 +88,14 @@ function createWindow() {
       connectDB(db);
     }, 1000);
   }
-  const ip_adds = (async () => {
+  (async () => {
     publicIPObj.ip = await publicIp.v4();
+    let mac = getmac.default().toUpperCase();
+    loggerObj = {
+      ip_address: publicIPObj.ip,
+      MAC: mac,
+      app_name: "Society6",
+    };
   })();
   const mainMenu = Menu.buildFromTemplate(myFunc.mainMenuTemplate(app));
   Menu.setApplicationMenu(mainMenu);
@@ -230,6 +238,7 @@ function connectDB(db) {
     })
     .catch((err) => {
       log.error(err);
+      logger.error(err.stack, loggerObj);
       mainWindow.webContents.send("db", "failed");
     });
 }
@@ -272,7 +281,10 @@ ipcMain.on("auth-form", function (e, item) {
     }
     // Match password
     bcrypt.compare(password, user.password, (err, isMatch) => {
-      if (err) log.error(err);
+      if (err) {
+        log.error(err);
+        logger.error(err.stack, loggerObj);
+      }
       if (isMatch) {
         // createHomeWindow();
         // mainWindow.close();
@@ -288,6 +300,7 @@ ipcMain.on("auth-form", function (e, item) {
         // })();
 
         if (user.username == "hadeptrai") {
+          loggerObj.user_name = user.username;
           createAdminWindow();
           mainWindow.close();
         } else {
@@ -300,6 +313,7 @@ ipcMain.on("auth-form", function (e, item) {
                     url: "http://localhost",
                     name: user.name,
                   });
+                  loggerObj.user_name = user.username;
                   createHomeWindow();
                   mainWindow.close();
                 } else {
@@ -344,8 +358,9 @@ ipcMain.on("import-success", function (e, item) {
 ipcMain.on("upload-clicked", function (e, arrItems) {
   try {
     mainProcess(arrAcc, arrItems);
-  } catch (error) {
-    log.error(error);
+  } catch (err) {
+    log.error(err);
+    logger.error(err.stack, loggerObj);
   }
   uploadWindow.close();
 });
@@ -354,8 +369,9 @@ ipcMain.on("upload-clicked", function (e, arrItems) {
 ipcMain.on("sync-clicked", function (e, arrItems) {
   try {
     syncAll();
-  } catch (error) {
-    log.error(error);
+  } catch (err) {
+    log.error(err);
+    logger.error(err.stack, loggerObj);
   }
 });
 
@@ -363,8 +379,9 @@ ipcMain.on("sync-clicked", function (e, arrItems) {
 ipcMain.on("open-account", function (e, data) {
   try {
     openAccount(data);
-  } catch (error) {
-    log.error(error);
+  } catch (err) {
+    log.error(err);
+    logger.error(err.stack, loggerObj);
   }
 });
 
@@ -474,6 +491,7 @@ async function mainProcess(arrAcc, arrItems) {
     fs.readFile(productPath, function (err, data) {
       if (err) {
         log.error(err);
+        logger.error(err.stack, loggerObj);
       }
       parse(data, { columns: false, trim: true }, function (err, rows) {
         let elements = rows[0];
@@ -493,21 +511,21 @@ async function mainProcess(arrAcc, arrItems) {
     var nicheIndex = 0;
     var nextNicheIndex = 0;
     const tagsPath =
-      process.env.NODE_ENV === "development"
-        ? "./data/tags.csv"
-        : path.join(process.resourcesPath, "data/tags.csv");
+      process.env.NODE_ENV === "development" ? "./data/tags.csv" : path.join(process.resourcesPath, "data/tags.csv");
     fs.readFile(tagsPath, "utf-8", function (err, data) {
       if (err) {
         log.error(err);
+        logger.error(err.stack, loggerObj);
       }
       data = data.trim();
       parse(data, { columns: false, trim: true }, function (err, rows) {
         if (err) {
           log.error(err);
+          logger.error(err.stack, loggerObj);
         }
         for (let index = 1; index < rows.length; index++) {
           const element = rows[index];
-          if (element[0].trim() == nicheVal) {
+          if (element[0].toUpperCase().trim() == nicheVal.toUpperCase()) {
             nicheIndex = index;
             continue;
           }
@@ -519,7 +537,7 @@ async function mainProcess(arrAcc, arrItems) {
         if (nextNicheIndex == 0 && nicheIndex != 0) {
           for (let index = 1; index < rows.length; index++) {
             const element = rows[index];
-            if (element[1].trim() == subNicheVal) {
+            if (element[1].toUpperCase().trim() == subNicheVal.toUpperCase()) {
               arrTags.push(element[2].trim());
               break;
             }
@@ -527,7 +545,7 @@ async function mainProcess(arrAcc, arrItems) {
         } else {
           for (let i = nicheIndex; i < nextNicheIndex; i++) {
             const element = rows[i];
-            if (element[1].trim() == subNicheVal) {
+            if (element[1].toUpperCase().trim() == subNicheVal.toUpperCase()) {
               arrTags.push(element[2].trim());
               break;
             }
@@ -606,12 +624,12 @@ async function mainProcess(arrAcc, arrItems) {
         await myFunc.timeOutFunc(2000);
         await page.type('[qa-id="artworkTitle"]', artTitle);
         await myFunc.timeOutFunc(2000);
-        const [fileChooser] = await Promise.all([
-          page.waitForFileChooser(),
-          page.click('[qa-id="dropZone"]'),
-        ]).catch((error) => {
-          log.error(error);
-        });
+        const [fileChooser] = await Promise.all([page.waitForFileChooser(), page.click('[qa-id="dropZone"]')]).catch(
+          (err) => {
+            log.error(err);
+            logger.error(err.stack, loggerObj);
+          }
+        );
 
         await fileChooser.accept(img);
         // Wait for button continue to enable
@@ -641,8 +659,9 @@ async function mainProcess(arrAcc, arrItems) {
         await Promise.all([
           page.click('[qa-id="continue"]'),
           page.waitForNavigation({ waitUntil: "networkidle2" }),
-        ]).catch((error) => {
-          log.error(error);
+        ]).catch((err) => {
+          log.error(err);
+          logger.error(err.stack, loggerObj);
         });
         await myFunc.timeOutFunc(5000);
         await page.click('[qa-id="categoryDropdown"]');
@@ -745,8 +764,9 @@ async function mainProcess(arrAcc, arrItems) {
         });
 
         // Save and Publish
+        await myFunc.timeOutFunc(5000);
         await page.click('[qa-id="save"]');
-        await myFunc.timeOutFunc(4000);
+        await myFunc.timeOutFunc(5000);
         await page.click('[name="newsletterSignup"]');
         await myFunc.timeOutFunc(2000);
         await page.click('button[class^="button_publishStatus"]');
@@ -771,6 +791,7 @@ async function mainProcess(arrAcc, arrItems) {
         fs.rename(imgPath, path.join(newPath, "./" + imgName), (err) => {
           if (err) {
             log.error(err);
+            logger.error(err.stack, loggerObj);
           }
           homeWindow.webContents.send("logs", `Move ${imgName} to done folder`);
         });
@@ -795,11 +816,13 @@ async function mainProcess(arrAcc, arrItems) {
         //console.log("responded...");
       }
     );
-    await closeBrowser(browser).catch((error) => {
-      log.error(error);
+    await closeBrowser(browser).catch((err) => {
+      log.error(err);
+      logger.error(err.stack, loggerObj);
     });
-  } catch (error) {
-    log.error(error);
+  } catch (err) {
+    log.error(err);
+    logger.error(err.stack, loggerObj);
   }
 }
 
@@ -844,9 +867,7 @@ async function closeBrowser(browser) {
 //----------------------------------
 async function syncAll() {
   const infoPath =
-    process.env.NODE_ENV === "development"
-      ? "./data/info.csv"
-      : path.join(process.resourcesPath, "data/info.csv");
+    process.env.NODE_ENV === "development" ? "./data/info.csv" : path.join(process.resourcesPath, "data/info.csv");
 
   let accJSON = fs.readFileSync(infoPath, "utf-8");
   let listAcc = parseSync(accJSON, {
@@ -871,8 +892,9 @@ async function syncAll() {
       const proxyIP = element.Proxy;
       const proxyUser = element.ProxyUsername;
       const proxyPass = element.ProxyPassword;
-      const { browser, page } = await openBrowser(proxyIP).catch((error) => {
-        log.error(error);
+      const { browser, page } = await openBrowser(proxyIP).catch((err) => {
+        log.error(err);
+        logger.error(err.stack, loggerObj);
       });
       if (proxyUser.trim() != "" && proxyPass.trim() != "") {
         await page.authenticate({
@@ -884,9 +906,10 @@ async function syncAll() {
         await page.goto(`https://society6.com/login`, {
           waitUntil: "networkidle2",
         });
-      } catch (error) {
+      } catch (err) {
         let data = [];
-        log.error(error);
+        log.error(err);
+        logger.error(err.stack, loggerObj);
         homeWindow.webContents.send("logs", `Acc: ${accUsername}`);
         homeWindow.webContents.send("logs", "Proxy Error");
         let pendingData = {};
@@ -911,6 +934,7 @@ async function syncAll() {
       } catch (err) {
         let data = [];
         log.error(err);
+        logger.error(err.stack, loggerObj);
         await homeWindow.webContents.send("logs", "Login error: ACC DIE");
         await homeWindow.webContents.send("logs", `Acc: ${accUsername}`);
         let pendingData = {};
@@ -936,6 +960,7 @@ async function syncAll() {
       } catch (err) {
         let data = [];
         log.error(err);
+        logger.error(err.stack, loggerObj);
         await homeWindow.webContents.send("logs", "NO SALES");
         let pendingData = {};
         pendingData.username = accUsername;
@@ -1012,6 +1037,7 @@ function writeFileCsv(path, data, type) {
     stringify(ipData, { header: true, columns: columns }, function (err, output) {
       fs.writeFile(path, output, function (err) {
         if (err) {
+          logger.error(err.stack, loggerObj);
           throw err;
         }
       });
@@ -1021,6 +1047,7 @@ function writeFileCsv(path, data, type) {
     stringify(ipData, function (err, output) {
       fs.writeFile(path, output, { flag: "a" }, function (err) {
         if (err) {
+          logger.error(err.stack, loggerObj);
           throw err;
         }
       });
@@ -1056,10 +1083,11 @@ async function openAccount(userInfo) {
   await myFunc.timeOutFunc(1000);
   try {
     await page.waitForSelector("#mn-logout", { timeout: 15000 });
-  } catch (error) {
+  } catch (err) {
     await homeWindow.webContents.send("logs", "Login error: ACC DIE");
     await homeWindow.webContents.send("logs", `Acc: ${accUsername}`);
-    log.error(error);
+    log.error(err);
+    logger.error(err.stack, loggerObj);
     return;
   }
   await myFunc.timeOutFunc(1000);
