@@ -525,7 +525,7 @@ async function mainProcess(arrAcc, arrItems) {
         }
         for (let index = 1; index < rows.length; index++) {
           const element = rows[index];
-          if (element[0].toUpperCase().trim() == nicheVal.toUpperCase()) {
+          if (element[0].trim() == nicheVal) {
             nicheIndex = index;
             continue;
           }
@@ -537,7 +537,7 @@ async function mainProcess(arrAcc, arrItems) {
         if (nextNicheIndex == 0 && nicheIndex != 0) {
           for (let index = 1; index < rows.length; index++) {
             const element = rows[index];
-            if (element[1].toUpperCase().trim() == subNicheVal.toUpperCase()) {
+            if (element[1].trim() == subNicheVal) {
               arrTags.push(element[2].trim());
               break;
             }
@@ -545,7 +545,7 @@ async function mainProcess(arrAcc, arrItems) {
         } else {
           for (let i = nicheIndex; i < nextNicheIndex; i++) {
             const element = rows[i];
-            if (element[1].toUpperCase().trim() == subNicheVal.toUpperCase()) {
+            if (element[1].trim() == subNicheVal) {
               arrTags.push(element[2].trim());
               break;
             }
