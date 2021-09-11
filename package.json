@@ -22,8 +22,8 @@
     "publish": [
       {
         "provider": "github",
-        "owner": "nobitaz",
-        "repo": "SourceCode"
+        "owner": "QChym",
+        "repo": "so6-upload"
       }
     ]
   },
